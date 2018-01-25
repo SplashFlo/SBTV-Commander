@@ -17,17 +17,6 @@ OnAutoItExitRegister("_endScript")
 
 
 ;=================================================================================================================
-; Variablen
-;=================================================================================================================
-
-$version = 0.1 ;Aktuelle Versionsnumemr als double
-$clientPath = "C:\Program Files\SBTVPrograms\Commander" ;Pfad nach Installation von dem Programm
-
-loginGUI() ; Programmstart
-;=================================================================================================================
-
-
-;=================================================================================================================
 ; Includings
 ;=================================================================================================================
 
@@ -42,8 +31,20 @@ loginGUI() ; Programmstart
 #include <GUIConstantsEx.au3>
 #include <WindowsConstants.au3>
 #include <ButtonConstants.au3>
+#include <login.au3>
 
 
+;=================================================================================================================
+
+
+;=================================================================================================================
+; Variablen
+;=================================================================================================================
+
+$version = 0.1 ;Aktuelle Versionsnumemr als double
+$clientPath = "C:\Program Files\SBTVPrograms\Commander" ;Pfad nach Installation von dem Programm
+
+loginGUI() ; Programmstart
 ;=================================================================================================================
 
 
@@ -161,7 +162,8 @@ func loginGUI()
 				_endScript()
 
 			Case $Login
-				errormessage(004)
+				$loginTry = login($Username, $Password)
+				MsgBox(0, "", $loginTry)
 
 		EndSwitch
 	WEnd
