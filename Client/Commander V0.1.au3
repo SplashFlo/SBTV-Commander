@@ -4,14 +4,14 @@
 
 
 #pragma compile(UPX, False)
-;#pragma compile(FileDescription, DESCRIPTION)
+#pragma compile(FileDescription, Ein Clanverwaltungsprogramm)
 #pragma compile(ProductName, SBTV Commander)
 #pragma compile(ProductVersion, 0.1)
 #pragma compile(FileVersion, 0.1) ; The last parameter is optional.
 #pragma compile(LegalCopyright, © SplashBirdTV)
 ;#pragma compile(LegalTrademarks, '"Trademark something1, and some text in "quotes" etc...')
 #pragma compile(CompanyName, 'SplashBirdTV')
-OnAutoItExitRegister("_exitScript")
+OnAutoItExitRegister("_endScript")
 
 ;=================================================================================================================
 
@@ -19,6 +19,9 @@ OnAutoItExitRegister("_exitScript")
 ;=================================================================================================================
 ; Variablen
 ;=================================================================================================================
+
+$version = 0.1 ;Aktuelle Versionsnumemr als double
+$clientPath = "C:\Program Files\SBTVPrograms\Commander" ;Pfad nach Installation von dem Programm
 
 
 ;=================================================================================================================
@@ -31,8 +34,13 @@ OnAutoItExitRegister("_exitScript")
 #include <File.au3>
 #include <Date.au3>
 #include <Crypt.au3>
+#include <GuiImageList.au3>
 #include <GDIPlus.au3>
 #include <MsgBoxConstants.au3>
+#include <ButtonConstants.au3>
+#include <EditConstants.au3>
+#include <GUIConstantsEx.au3>
+#include <WindowsConstants.au3>
 
 ;=================================================================================================================
 
@@ -48,15 +56,20 @@ OnAutoItExitRegister("_exitScript")
 ;
 ; ;================================================================================================================
 
-if FileExists("C:\Program Files\SBTVPrograms\Commander") Then
+loginGUI()
 
-	MsgBox(64, "Info", "Programmstart erfolgreich!")
+func startup()
+	if FileExists("C:\Program Files\SBTVPrograms\Commander") Then
 
-Else
 
-	errorMessage(001,true)
 
-EndIf
+	Else
+
+		errorMessage(001,true)
+
+	EndIf
+
+EndFunc
 
 ;==================================================================================================================
 
@@ -78,17 +91,82 @@ func errorMessage($errorNumber,$stopScript = False)
 		Case 001
 			MsgBox(16, "Error001", "Das Programm wurde nicht ordnungsgemäß installiert!")
 
+		Case 002
+			MsgBox(16, "Error002", "Der Server konnte nicht erreicht werden!")
+
 		Case Else
-			MsgBox(16, "#UNKNOWN ERROR#", "Es ist ein schwerwiegender Fehler beim erstellen einer Fehlermeldung aufgetreten!")
+			MsgBox(16, "#UNKNOWN ERROR#", "#UNKNOWN ERROR#" & @CRLF &"Es ist ein schwerwiegender Fehler beim erstellen einer Fehlermeldung aufgetreten!")
 			Exit
+
 	EndSwitch
 
 	if $stopScript == true Then
-		_exitScript()
+		_endScript()
 	EndIf
 
 EndFunc
 
+;==================================================================================================================
+
+
+; Function: LoginGUI ;=============================================================================================
+;
+; Name...........: loginGUI
+; Beschreibung ...: Eine GUI für den Login
+; Syntax.........: loginGUI()
+; Parameters ....: -
+; Return values .: -
+; Autor ........: SplashFlo
+;
+; ;================================================================================================================
+
+func loginGUI()
+
+	$Login = GUICreate("Login", 260, 153, -1, -1)
+	GUISetIcon("C:\Users\florian.krismer\Documents\GitHub\SBTV-Commander\Client\icons\sbtv.ico")
+	GUISetBkColor(0xC0C0C0)
+	$Group = GUICtrlCreateGroup("", 16, 16, 178, 81)
+	$Username = GUICtrlCreateInput("Username", 33, 32, 151, 21)
+	GUICtrlSetFont(-1, 8, 800, 0, "MS Sans Serif")
+	GUICtrlSetColor(-1, 0xFFFFFF)
+	GUICtrlSetBkColor(-1, 0x000000)
+	GUICtrlSetCursor (-1, 5)
+	$Password = GUICtrlCreateInput("Passwort", 33, 64, 151, 21, BitOR($GUI_SS_DEFAULT_INPUT,$ES_PASSWORD))
+	GUICtrlSetFont(-1, 6, 800, 0, "MS Sans Serif")
+	GUICtrlSetColor(-1, 0xFFFFFF)
+	GUICtrlSetBkColor(-1, 0x000000)
+	GUICtrlSetCursor (-1, 5)
+	GUICtrlCreateGroup("", -99, -99, 1, 1)
+	GUICtrlCreateLabel("V:" & $version, 208,8,25,15)
+	GUICtrlSetFont(-1,8)
+	$Login = GUICtrlCreateButton("Login", 208, 32, 48, 48, $BS_ICON)
+	GUICtrlSetImage(-1, "C:\Users\florian.krismer\Documents\GitHub\SBTV-Commander\Client\icons\login.ico",-1,$BS_ICON)
+	GUICtrlSetTip(-1, "Login")
+	GUICtrlSetCursor (-1, 0)
+	$Forgot = GUICtrlCreateButton("Forgot Password", 208, 104, 48, 48, $BS_ICON)
+	GUICtrlSetImage(-1, "C:\Users\florian.krismer\Documents\GitHub\SBTV-Commander\Client\icons\forgot_password.ico",-1,$BS_ICON)
+	GUICtrlSetTip(-1, "Passwort vergessen")
+	GUICtrlSetCursor (-1, 0)
+	GUICtrlSetState(-1,$GUI_DISABLE)
+	$RememberMe = GUICtrlCreateCheckbox("Anmeldedaten speichern", 32, 120, 161, 17)
+	GUICtrlSetBkColor(-1, 0xEEEEEE)
+	GUICtrlSetState(-1,$GUI_DISABLE)
+	GUISetState(@SW_SHOW)
+	GUICtrlCreatePic("C:\Users\florian.krismer\Documents\GitHub\SBTV-Commander\Client\icons\guibackground.jpg",0,0,285,251)
+
+	While 1
+		$nMsg = GUIGetMsg()
+		Switch $nMsg
+			Case $GUI_EVENT_CLOSE
+				_endScript()
+
+			Case $Login
+				errormessage(004)
+
+		EndSwitch
+	WEnd
+
+EndFunc
 ;==================================================================================================================
 
 
@@ -103,7 +181,7 @@ EndFunc
 ;
 ; ;================================================================================================================
 
-func _exitScript()
+func _endScript()
 
 	UDPShutdown()
 	Exit
