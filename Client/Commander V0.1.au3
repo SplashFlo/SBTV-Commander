@@ -23,7 +23,7 @@ OnAutoItExitRegister("_endScript")
 $version = 0.1 ;Aktuelle Versionsnumemr als double
 $clientPath = "C:\Program Files\SBTVPrograms\Commander" ;Pfad nach Installation von dem Programm
 
-
+loginGUI() ; Programmstart
 ;=================================================================================================================
 
 
@@ -41,13 +41,15 @@ $clientPath = "C:\Program Files\SBTVPrograms\Commander" ;Pfad nach Installation 
 #include <EditConstants.au3>
 #include <GUIConstantsEx.au3>
 #include <WindowsConstants.au3>
+#include <ButtonConstants.au3>
+
 
 ;=================================================================================================================
 
 
 ; Function: Startup ;=============================================================================================
 ;
-; Name...........: Startup Funktion
+; Name...........: Startup
 ; Beschreibung ...: Überprüft ob alle Daten vorhanden sind
 ; Syntax.........: _startUp()
 ; Parameters ....: -
@@ -56,12 +58,10 @@ $clientPath = "C:\Program Files\SBTVPrograms\Commander" ;Pfad nach Installation 
 ;
 ; ;================================================================================================================
 
-loginGUI()
+
 
 func startup()
 	if FileExists("C:\Program Files\SBTVPrograms\Commander") Then
-
-
 
 	Else
 
@@ -123,7 +123,7 @@ EndFunc
 func loginGUI()
 
 	$Login = GUICreate("Login", 260, 153, -1, -1)
-	GUISetIcon("C:\Users\florian.krismer\Documents\GitHub\SBTV-Commander\Client\icons\sbtv.ico")
+	GUISetIcon(@ScriptDir & "\icons\sbtv.ico")
 	GUISetBkColor(0xC0C0C0)
 	$Group = GUICtrlCreateGroup("", 16, 16, 178, 81)
 	$Username = GUICtrlCreateInput("Username", 33, 32, 151, 21)
@@ -131,7 +131,7 @@ func loginGUI()
 	GUICtrlSetColor(-1, 0xFFFFFF)
 	GUICtrlSetBkColor(-1, 0x000000)
 	GUICtrlSetCursor (-1, 5)
-	$Password = GUICtrlCreateInput("Passwort", 33, 64, 151, 21, BitOR($GUI_SS_DEFAULT_INPUT,$ES_PASSWORD))
+	$Password = GUICtrlCreateInput("Passwort", 33, 64, 151, 21)
 	GUICtrlSetFont(-1, 6, 800, 0, "MS Sans Serif")
 	GUICtrlSetColor(-1, 0xFFFFFF)
 	GUICtrlSetBkColor(-1, 0x000000)
@@ -139,12 +139,12 @@ func loginGUI()
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 	GUICtrlCreateLabel("V:" & $version, 208,8,25,15)
 	GUICtrlSetFont(-1,8)
-	$Login = GUICtrlCreateButton("Login", 208, 32, 48, 48, $BS_ICON)
-	GUICtrlSetImage(-1, "C:\Users\florian.krismer\Documents\GitHub\SBTV-Commander\Client\icons\login.ico",-1,$BS_ICON)
+	$Login = GUICtrlCreateButton("Login", 208, 32, 48, 48,$BS_ICON)
+	GUICtrlSetImage(-1, @ScriptDir & "\icons\login.ico",-1)
 	GUICtrlSetTip(-1, "Login")
 	GUICtrlSetCursor (-1, 0)
 	$Forgot = GUICtrlCreateButton("Forgot Password", 208, 104, 48, 48, $BS_ICON)
-	GUICtrlSetImage(-1, "C:\Users\florian.krismer\Documents\GitHub\SBTV-Commander\Client\icons\forgot_password.ico",-1,$BS_ICON)
+	GUICtrlSetImage(-1, @ScriptDir & "\icons\forgot_password.ico",-1,$BS_ICON)
 	GUICtrlSetTip(-1, "Passwort vergessen")
 	GUICtrlSetCursor (-1, 0)
 	GUICtrlSetState(-1,$GUI_DISABLE)
@@ -152,7 +152,7 @@ func loginGUI()
 	GUICtrlSetBkColor(-1, 0xEEEEEE)
 	GUICtrlSetState(-1,$GUI_DISABLE)
 	GUISetState(@SW_SHOW)
-	GUICtrlCreatePic("C:\Users\florian.krismer\Documents\GitHub\SBTV-Commander\Client\icons\guibackground.jpg",0,0,285,251)
+	GUICtrlCreatePic(@ScriptDir & "\icons\guibackground.jpg",0,0,285,251)
 
 	While 1
 		$nMsg = GUIGetMsg()
@@ -167,6 +167,7 @@ func loginGUI()
 	WEnd
 
 EndFunc
+
 ;==================================================================================================================
 
 
