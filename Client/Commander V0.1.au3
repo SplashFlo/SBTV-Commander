@@ -31,7 +31,6 @@ OnAutoItExitRegister("_endScript")
 #include <GUIConstantsEx.au3>
 #include <WindowsConstants.au3>
 #include <ButtonConstants.au3>
-#include <login.au3>
 
 
 ;=================================================================================================================
@@ -95,6 +94,9 @@ func errorMessage($errorNumber,$stopScript = False)
 		Case 002
 			MsgBox(16, "Error002", "Der Server konnte nicht erreicht werden!")
 
+		case 003
+			MsgBox(16, "Error003", "KP")
+
 		Case Else
 			MsgBox(16, "#UNKNOWN ERROR#", "#UNKNOWN ERROR#" & @CRLF &"Es ist ein schwerwiegender Fehler beim erstellen einer Fehlermeldung aufgetreten!")
 			Exit
@@ -127,12 +129,12 @@ func loginGUI()
 	GUISetIcon(@ScriptDir & "\icons\sbtv.ico")
 	GUISetBkColor(0xC0C0C0)
 	$Group = GUICtrlCreateGroup("", 16, 16, 178, 81)
-	$Username = GUICtrlCreateInput("Username", 33, 32, 151, 21)
+	$UsernameInput = GUICtrlCreateInput("Username", 33, 32, 151, 21)
 	GUICtrlSetFont(-1, 8, 800, 0, "MS Sans Serif")
 	GUICtrlSetColor(-1, 0xFFFFFF)
 	GUICtrlSetBkColor(-1, 0x000000)
 	GUICtrlSetCursor (-1, 5)
-	$Password = GUICtrlCreateInput("Passwort", 33, 64, 151, 21)
+	$PasswordInput = GUICtrlCreateInput("Passwort", 33, 64, 151, 21,$ES_PASSWORD)
 	GUICtrlSetFont(-1, 6, 800, 0, "MS Sans Serif")
 	GUICtrlSetColor(-1, 0xFFFFFF)
 	GUICtrlSetBkColor(-1, 0x000000)
@@ -140,11 +142,11 @@ func loginGUI()
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 	GUICtrlCreateLabel("V:" & $version, 208,8,25,15)
 	GUICtrlSetFont(-1,8)
-	$Login = GUICtrlCreateButton("Login", 208, 32, 48, 48,$BS_ICON)
+	$LoginButton = GUICtrlCreateButton("Login", 208, 32, 48, 48,$BS_ICON)
 	GUICtrlSetImage(-1, @ScriptDir & "\icons\login.ico",-1)
 	GUICtrlSetTip(-1, "Login")
 	GUICtrlSetCursor (-1, 0)
-	$Forgot = GUICtrlCreateButton("Forgot Password", 208, 104, 48, 48, $BS_ICON)
+	$ForgotButton = GUICtrlCreateButton("Forgot Password", 208, 104, 48, 48, $BS_ICON)
 	GUICtrlSetImage(-1, @ScriptDir & "\icons\forgot_password.ico",-1,$BS_ICON)
 	GUICtrlSetTip(-1, "Passwort vergessen")
 	GUICtrlSetCursor (-1, 0)
@@ -161,9 +163,10 @@ func loginGUI()
 			Case $GUI_EVENT_CLOSE
 				_endScript()
 
-			Case $Login
-				$loginTry = login($Username, $Password)
-				MsgBox(0, "", $loginTry)
+			Case $LoginButton
+				$Username = GUICtrlRead($UsernameInput)
+				$password = GUICtrlRead($PasswordInput)
+				errormessage(002)
 
 		EndSwitch
 	WEnd
