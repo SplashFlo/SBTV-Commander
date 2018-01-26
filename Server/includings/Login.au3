@@ -21,6 +21,11 @@
 ; Includings
 ;=================================================================================================================
 
+#include <File.au3>
+#include <Date.au3>
+#include <Crypt.au3>
+#include <GDIPlus.au3>
+#include <MsgBoxConstants.au3>
 OnAutoItExitRegister("_exit")
 
 ;=================================================================================================================
@@ -97,6 +102,7 @@ While 1 ;Entlosschleife
 		Else
 			_normalRequest($aData)
 		EndIf
+	EndIf
 	Sleep(20)
 WEnd
 
@@ -113,7 +119,7 @@ WEnd
 ;
 ; ;================================================================================================================
 
-func _normalRequest()
+func _normalRequest($aData)
 
 	Switch $aData[0]
 		case "version"
@@ -137,7 +143,7 @@ EndFunc
 ;
 ; ;================================================================================================================
 
-func _arrayRequest()
+func _arrayRequest($aData)
 
 	Select
 		case $splitString[1] = "login"
@@ -162,7 +168,7 @@ func _arrayRequest()
 				UDPSend($aClientArray, "0")
 			EndIf
 
-	EndSwitch
+	EndSelect
 
 EndFunc
 
