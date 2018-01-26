@@ -2,7 +2,7 @@
 ; Compiler Settings
 ;=================================================================================================================
 
-
+#pragma compile (Icon,.\icons\sbtv.ico)
 #pragma compile(UPX, False)
 #pragma compile(FileDescription, Ein Clanverwaltungsprogramm)
 #pragma compile(ProductName, SBTV Commander)
