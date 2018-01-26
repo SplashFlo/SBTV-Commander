@@ -2,7 +2,7 @@
 ; Compiler Settings
 ;=================================================================================================================
 
-
+#RequireAdmin
 #pragma compile(Console, true)
 #pragma compile(UPX, False)
 ;#pragma compile(FileDescription, DESCRIPTION)
@@ -35,14 +35,17 @@ OnAutoItExitRegister("_exit")
 ; Variablen
 ;=================================================================================================================
 
+Global $UDPPort = $CmdLineRaw
+Global $versioningFile = "C:\SBTV Commander\Version\version.ini"
 $login = 0
 $loginStart = 0
 $c1 = 0
 $c2 = 0
-$serverPort = 8080
 $g_IP = @IPAddress1
-$version = "0.1"
+$version = IniRead($versioningFile, "Version", "currenVersion", "err")
 $userini = "C:\SBTV Commander\users\users.ini"
+$portsFile = "C:\SBTV Commander\connections\currentConnections.ini"
+$logfile = "C:\SBTV Commander\logs\main.log"
 OnAutoItExitRegister("_exit") ;Falls das Script beendet wird, wird folgendes gesendet
 
 ;=================================================================================================================
@@ -61,15 +64,26 @@ OnAutoItExitRegister("_exit") ;Falls das Script beendet wird, wird folgendes ges
 ;
 ; ;================================================================================================================
 
+FileWrite($logfile,"--------------------------------------------Start of Log--------------------------------------------" & @CRLF)
+
+$checkPort = IniRead($portsfile, "Ports", $UDPPort, 0)
+
+
+if $checkPort == 0 Then
+
+	_FileWriteLog($logfile, "Error the Port is not ready to use (see ports.ini)" & @CRLF & @CRLF)
+	exit
+
+EndIf
+
 
 UDPStartup() ;startet den UDP-Service
-$aSocket = UDPBind($g_IP, $serverPort) ; Öffnet einen Socket mit der IP $g_IP und dem Port 65432
+$aSocket = UDPBind($g_IP, $UDPPort) ; Öffnet einen Socket mit der IP $g_IP und dem Port 65432
 ; $aSocket ist genauso aufgebaut wie das Array von UDPOpen()
 ;	$aSocket[1]: real socket
 ;	$aSocket[2]: IP des Servers
 ;	$aSocket[3]: Port des Servers
-ConsoleWrite("Starting UDP Server..." & @CRLF)
-ConsoleWrite("Current Port : " & $serverPort & @CRLF)
+
 
 ;------------------------------------------------------
 ;-----------------Abfrage des UDP----------------------
@@ -77,15 +91,17 @@ ConsoleWrite("Current Port : " & $serverPort & @CRLF)
 
 
 If @error Then
-	MsgBox(0, "", "ERROR: Could not start UDP Service")
+	_FileWriteLog($logfile, "ERROR: Could not start UDP Service" & @CRLF)
 	Exit
 EndIf
 
 ;------------------------------------------------------
 ;-------------UDP Abfragen bearbeiten------------------
 ;------------------------------------------------------
+_FileWriteLog($logfile, "Starting UDP Server..." & @CRLF)
+_FileWriteLog($logfile, "Current Port : " & $UDPPort & @CRLF)
 
-ConsoleWrite("Server is ready to use" & @CRLF & @CRLF & @CRLF)
+_FileWriteLog($logfile, "Server is ready to use" & @CRLF & @CRLF & @CRLF)
 While 1 ;Entlosschleife
 
 	$aData = UDPRecv($aSocket, 64, 2) ;empfängt Daten von einem Client
@@ -94,8 +110,8 @@ While 1 ;Entlosschleife
 	;	$aData[1]: IP des Clients
 	;	$aData[2]: Port des Clients
 	if $aData <> "" Then
-		$splitString = StringSplit($aData[0], " ")
-		ConsoleWrite("Intialising new connection" & @CRLF)
+		Global $splitString = StringSplit($aData[0], " ")
+		_FileWriteLog($logfile, "Intialising new connection" & @CRLF)
 		Global $aClientArray[4] = [$aSocket[0], $aSocket[1], $aData[1], $aData[2]]
 		if $splitString[0] > 1 Then
 			_arrayRequest($aData)
@@ -105,7 +121,6 @@ While 1 ;Entlosschleife
 	EndIf
 	Sleep(20)
 WEnd
-
 ;==================================================================================================================
 
 ; normal request ;=================================================================================================
@@ -123,8 +138,9 @@ func _normalRequest($aData)
 
 	Switch $aData[0]
 		case "version"
-			ConsoleWrite("Requested new Version " & @CRLF & "Send new version" & @CRLF & @CRLF)
+			_FileWriteLog($logfile, "Requested new Version " & @CRLF & "Send new version" & @CRLF & @CRLF)
 			UDPSend($aClientArray, $version)
+			Exit
 
 	EndSwitch
 
@@ -147,27 +163,18 @@ func _arrayRequest($aData)
 
 	Select
 		case $splitString[1] = "login"
-
 			; Return values .: 0 = Fehler
 			;				   1 = Login erfolgreich
 			;				   2 = neues Passwort wird benötigt
+			_login()
 
-			$username = $splitString[2]
-			$passwordCrypted = $splitString[3]
-			$readPassCrypted = IniRead($userini, "users",$username,"err")
+		case $splitString[1] = "newpass"
+			;Return Values.: 0 = Passwort wurde nicht geändert
+			;				 1 = Passwort erfolgreich geändert
+			_newPass()
 
-			if $readPassCrypted == "err" Then
-				UDPSend($aClientArray, "0")
-			ElseIf $readPassCrypted == "new" Then
-				UDPSend($aClientArray, "2")
-			EndIf
-
-			if $readPassCrypted == $passwordCrypted Then
-				UDPSend($aClientArray, "1")
-			Else
-				UDPSend($aClientArray, "0")
-			EndIf
-
+		case Else
+			Exit
 	EndSelect
 
 EndFunc
@@ -219,6 +226,80 @@ EndFunc
 ; ;===============================================================================================================
 
 
+; passchange;==========================================================================================================
+;
+; Name...........: newpass
+; Beschreibung ...: Client versucht das Passwort zu ändern
+; Syntax.........: _newPass()
+; Parameters ....: -
+; Return values .: -
+; Autor ........: Florian Krismer
+;
+; ;================================================================================================================
+
+func _newPass()
+
+	$username = $splitString[1]
+	$passwordCrypted = $splitString[2]
+	$currentPassCrypted = IniRead($userini, "users",$username,"err")
+
+	if $currentPassCrypted == "err" Then
+		UDPSend($aClientArray,"0")
+	ElseIf $currentPassCrypted == "new" Then
+		IniWrite($userini, "users", $username, $passwordCrypted)
+		if @error Then
+			UDPSend($aClientArray,"0")
+		Else
+			UDPSend($aClientArray, "1")
+		EndIf
+	EndIf
+
+	Exit
+EndFunc
+
+; ;===============================================================================================================
+
+
+; login;==========================================================================================================
+;
+; Name...........: login
+; Beschreibung ...: Client versucht sich einzuloggen
+; Syntax.........: _login()
+; Parameters ....: -
+; Return values .: -
+; Autor ........: Florian Krismer
+;
+; ;================================================================================================================
+
+func _login()
+
+	$username = $splitString[2]
+	_FileWriteLog($logfile, "User is trying to login with following username: " & $username & @CRLF)
+	$passwordCrypted = $splitString[3]
+	$readPassCrypted = IniRead($userini, "users",$username,"err")
+
+	if $readPassCrypted == "err" Then
+		UDPSend($aClientArray, "0")
+		_FileWriteLog($logfile, "User failed to login. Reason: user not defined" & @CRLF & @CRLF)
+	ElseIf $readPassCrypted == "new" Then
+		UDPSend($aClientArray, "2")
+		_FileWriteLog($logfile, "User needs a new password" & @CRLF & @CRLF)
+	EndIf
+
+	if $readPassCrypted == $passwordCrypted Then
+		UDPSend($aClientArray, "1")
+		_FileWriteLog($logfile, "User successfully logged in" & @CRLF & @CRLF)
+	Else
+		UDPSend($aClientArray, "0")
+		_FileWriteLog($logfile, "User failed to login. Reason: wrong password for user" & @CRLF & @CRLF)
+	EndIf
+
+	Exit
+EndFunc
+
+; ;================================================================================================================
+
+
 ; exit ;==========================================================================================================
 ;
 ; Name...........: _exit
@@ -232,7 +313,10 @@ EndFunc
 
 func _exit()
 
+	IniDelete($portsfile, "Ports", $UDPPort)
 	UDPShutdown()
+	FileWrite($logfile, "--------------------------------------------End of log--------------------------------------------" & @CRLF & @CRLF & @CRLF)
 	Exit
+
 
 EndFunc

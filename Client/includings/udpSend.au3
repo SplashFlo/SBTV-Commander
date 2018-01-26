@@ -22,10 +22,10 @@ func _UdpSend($ip,$port,$data,$waitForAnswer = true)
 		if WinExists("Steam Punk Loading") then
 			WinKill("Steam Punk Loading")
 		EndIf
-		errormessage(002,true)
+		;errormessage(002,true)
 	EndIf
 
-	UDPSend($udpSocket, $UDPMessage)
+	UDPSend($udpSocket, $data)
 
 	if $waitForAnswer == true Then
 		Do
@@ -35,13 +35,12 @@ func _UdpSend($ip,$port,$data,$waitForAnswer = true)
 			if WinExists("Steam Punk Loading") then
 				WinKill("Steam Punk Loading")
 			EndIf
-			errormessage(002,true)
+			;errormessage(002,true)
 		EndIf
 
 		sleep(20) ;timeout für wartezeit vom server
 
 		Until $UDPReceivedData <> ""
-			Global $waitForAnswer = 0
 			UDPShutdown()
 			Return $UDPReceivedData
 	EndIf
