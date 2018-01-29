@@ -3,10 +3,10 @@
 ;=================================================================================================================
 
 #RequireAdmin
-#pragma compile(Console, true)
+;#pragma compile(Console, true)
 #pragma compile(UPX, False)
 ;#pragma compile(FileDescription, DESCRIPTION)
-#pragma compile(ProductName, ConnectionBuilder)
+#pragma compile(ProductName, MainUDPServer)
 #pragma compile(ProductVersion, 0.1)
 #pragma compile(FileVersion, 0.1) ; The last parameter is optional.
 #pragma compile(LegalCopyright, © SplashBirdTV)
@@ -41,7 +41,8 @@ $login = 0
 $loginStart = 0
 $c1 = 0
 $c2 = 0
-$g_IP = @IPAddress1
+$g_IP = "10.53.32.64"
+$scriptdir = "C:\SBTV Commander"
 $version = IniRead($versioningFile, "Version", "currenVersion", "err")
 $userini = "C:\SBTV Commander\users\users.ini"
 $portsFile = "C:\SBTV Commander\connections\currentConnections.ini"
@@ -92,7 +93,7 @@ $aSocket = UDPBind($g_IP, $UDPPort) ; Öffnet einen Socket mit der IP $g_IP und 
 
 If @error Then
 	_FileWriteLog($logfile, "ERROR: Could not start UDP Service" & @CRLF)
-	Exit
+	_exit()
 EndIf
 
 ;------------------------------------------------------
@@ -100,17 +101,17 @@ EndIf
 ;------------------------------------------------------
 _FileWriteLog($logfile, "Starting UDP Server..." & @CRLF)
 _FileWriteLog($logfile, "Current Port : " & $UDPPort & @CRLF)
-
+IniWrite($portsFile,"Running", $UDPPort, "yes")
 _FileWriteLog($logfile, "Server is ready to use" & @CRLF & @CRLF & @CRLF)
 While 1 ;Entlosschleife
 
-	$aData = UDPRecv($aSocket, 64, 2) ;empfängt Daten von einem Client
+	$aData = UDPRecv($aSocket,9999, 2) ;empfängt Daten von einem Client
 	;durch das Flag 2 wird folgendes Array ausgegeben:
 	;	$aData[0]: data
 	;	$aData[1]: IP des Clients
 	;	$aData[2]: Port des Clients
 	if $aData <> "" Then
-		Global $splitString = StringSplit($aData[0], " ")
+		Global $splitString = StringSplit($aData[0], "|")
 		_FileWriteLog($logfile, "Intialising new connection" & @CRLF)
 		Global $aClientArray[4] = [$aSocket[0], $aSocket[1], $aData[1], $aData[2]]
 		if $splitString[0] > 1 Then
@@ -135,13 +136,14 @@ WEnd
 ; ;================================================================================================================
 
 func _normalRequest($aData)
-
+	_FileWriteLog($logfile, "Getting new Request: " & $aData[0] & @CRLF)
 	Switch $aData[0]
 		case "version"
 			_FileWriteLog($logfile, "Requested new Version " & @CRLF & "Send new version" & @CRLF & @CRLF)
 			UDPSend($aClientArray, $version)
-			Exit
-
+			_exit()
+		case Else
+			_FileWriteLog($logfile, "Unknown call")
 	EndSwitch
 
 EndFunc
@@ -160,7 +162,7 @@ EndFunc
 ; ;================================================================================================================
 
 func _arrayRequest($aData)
-
+	_FileWriteLog($logfile, "Getting new Request: " & $splitString[1] & @CRLF)
 	Select
 		case $splitString[1] = "login"
 			; Return values .: 0 = Fehler
@@ -173,8 +175,18 @@ func _arrayRequest($aData)
 			;				 1 = Passwort erfolgreich geändert
 			_newPass()
 
+		case $splitString[1] = "RequestFeature"
+			;Return Values.: 0 = Request wurde nicht eingetragen
+			;				 1 = Request wurde eingeragen
+			_RequestFeature()
+
+		case $splitString[1] = "ReportBug"
+			;Return Values.: 0 = Bug wurde nicht eingetragen
+			;				 1 = Bug wurde eingeragen
+			_ReportBug()
+
 		case Else
-			Exit
+			_exit()
 	EndSelect
 
 EndFunc
@@ -226,7 +238,103 @@ EndFunc
 ; ;===============================================================================================================
 
 
-; passchange;==========================================================================================================
+; feature request;================================================================================================
+;
+; Name...........: request feature
+; Beschreibung ...: Client will ein Feature Request senden
+; Syntax.........: _RequestFeature()
+; Parameters ....: -
+; Return values .: -
+; Autor ........: Florian Krismer
+;
+; ;================================================================================================================
+
+func _RequestFeature()
+
+	_FileWriteLog($logfile, "User is requesting an new feature" & @CRLF)
+	$username = $splitString[2]
+	$shortDes = $splitString[3]
+	$longDes = $splitString[4]
+	$test = IniRead($scriptdir & "\requests\Requests.ini", "FeatureRequest",$username & "1","err")
+	if $test == "err" Then
+		IniWrite($scriptdir & "\requests\Requests.ini", "FeatureRequest", $username & "1", $shortDes)
+		FileWrite($scriptdir & "\requests\feature\" & $username & "1" & ".txt", "Long Description:"  & @CRLF & $longDes)
+	Else
+		$test = 2
+		while $test < 99
+			$read = IniRead($scriptdir & "\requests\Requests.ini", "FeatureRequest",$username & $test,"err")
+			if $read == "err" Then
+				IniWrite($scriptdir & "\requests\Requests.ini", "FeatureRequest", $username & $test, $shortDes)
+				FileWrite($scriptdir & "\requests\feature\" & $username & $test & ".txt", "Long Description:"  & @CRLF & $longDes)
+				$test = 100
+			Else
+				$test = $test + 1
+			EndIf
+
+		WEnd
+	EndIf
+
+	if @error Then
+		UDPSend($aClientArray,"0")
+	Else
+		UDPSend($aClientArray,"1")
+	EndIf
+	_exit()
+
+EndFunc
+
+; ;================================================================================================================
+
+
+; bug report;================================================================================================
+;
+; Name...........:bug report
+; Beschreibung ...: Clinet sendet einen Bug Repoort
+; Syntax.........: _ReportBug()
+; Parameters ....: -
+; Return values .: -
+; Autor ........: Florian Krismer
+;
+; ;================================================================================================================
+
+func _ReportBug()
+
+	_FileWriteLog($logfile, "User is sending a Bug Report" & @CRLF)
+	$username = $splitString[2]
+	$shortDes = $splitString[3]
+	$longDes = $splitString[4]
+	$test = IniRead($scriptdir & "\requests\Requests.ini", "BugReport",$username & "1","err")
+	if $test == "err" Then
+		IniWrite($scriptdir & "\requests\Requests.ini", "BugReport", $username & "1", $shortDes)
+		FileWrite($scriptdir & "\requests\bug\" & $username & "1" & ".txt", "Long Description:"  & @CRLF & $longDes)
+	Else
+		$test = 2
+		while $test < 99
+			$read = IniRead($scriptdir & "\requests\Requests.ini", "BugReport",$username & $test,"err")
+			if $read == "err" Then
+				IniWrite($scriptdir & "\requests\Requests.ini", "BugReport", $username & $test, $shortDes)
+				FileWrite($scriptdir & "\requests\bug\" & $username & $test & ".txt", "Long Description:"  & @CRLF & $longDes)
+				$test = 100
+			Else
+				$test = $test + 1
+			EndIf
+
+		WEnd
+	EndIf
+
+	if @error Then
+		UDPSend($aClientArray,"0")
+	Else
+		UDPSend($aClientArray,"1")
+	EndIf
+	_exit()
+
+EndFunc
+
+; ;================================================================================================================
+
+
+; passchange;======================================================================================================
 ;
 ; Name...........: newpass
 ; Beschreibung ...: Client versucht das Passwort zu ändern
@@ -314,6 +422,7 @@ EndFunc
 func _exit()
 
 	IniDelete($portsfile, "Ports", $UDPPort)
+	IniDelete($portsFile, "Running", $UDPPort)
 	UDPShutdown()
 	FileWrite($logfile, "--------------------------------------------End of log--------------------------------------------" & @CRLF & @CRLF & @CRLF)
 	Exit

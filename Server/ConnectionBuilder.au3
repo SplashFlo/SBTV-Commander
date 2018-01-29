@@ -106,9 +106,16 @@ While 1 ;Entlosschleife
 						ConsoleWrite("!!!ERROR: Could start the UDPMainServer.exe!!!" & @CRLF)
 						UDPSend($aClientArray, "0")
 					Else
-						ConsoleWrite("Server successfully started" & @CRLF)
-						Sleep(100)
-						UDPSend($aClientArray, "1")
+						$loop = 1
+						while $loop = 1
+							$test = IniRead("C:\SBTV Commander\connections\currentConnections.ini", "Running", $aData[0],"no")
+							if $test == "yes" Then
+								ConsoleWrite("Server successfully started" & @CRLF)
+								UDPSend($aClientArray, "1")
+								$loop = 0
+							EndIf
+							sleep(20)
+						WEnd
 					EndIf
 				EndIf
 			Else
