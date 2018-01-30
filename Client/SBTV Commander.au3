@@ -355,6 +355,9 @@ func _GUIMainMenu()
 	$buttonAdminSettings = GUICtrlCreateButton("Admin Verwaltung", 527,120,40,40,$BS_ICON)
 	GUICtrlSetImage(-1,@ScriptDir & "\icons\adminSettings.ico",-1)
 	GUICtrlSetTip(-1, "Admin Einstellungen")
+	$buttonTeamspeak = GUICtrlCreateButton("Teamspeak", 527,180,40,40,$BS_ICON)
+	GUICtrlSetImage(-1, @ScriptDir & "\icons\teamspeak.ico",-1)
+	GUICtrlSetTip(-1,"Teamspeak Verwaltung")
 	GUISetState(@SW_SHOW)
 
 	Global $hHBmp_BG, $hB, $iPerc = 0, $iSleep = 20, $fPower = 0.2
