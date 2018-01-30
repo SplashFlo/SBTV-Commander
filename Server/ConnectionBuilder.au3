@@ -41,7 +41,7 @@ $serverPort = 9898
 $configFile = "C:\SBTV Commander\Version\version.ini"
 $portsFile = "C:\SBTV Commander\connections\currentConnections.ini"
 $versioningFile = "C:\SBTV Commander\Version\version.ini"
-$version = IniRead($versioningFile, "Version", "currentVersion", "err")
+$version = IniRead($versioningFile, "Version", "current", "err")
 $g_IP = IniRead($versioningFile, "IP", "ip", 0)
 $SenData = 0
 OnAutoItExitRegister("_exit") ;Falls das Script beendet wird, wird folgendes gesendet

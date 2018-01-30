@@ -49,6 +49,7 @@ $version = 0.2 ;Aktuelle Versionsnumemr als double
 $clientPath = "C:\Program Files\SBTVPrograms\Commander" ;Pfad nach Installation von dem Programm
 Global $ip = "10.53.32.64"
 Global $aPos[2]
+Global $nowsec = @SEC
 $apos[0] = -1
 $apos[1] = -1
 $no = 0
@@ -81,27 +82,7 @@ func startup()
 			errormessage(001,true)
 		EndIf
 
-		$versioncheck = _UdpSend($ip,"9898","version")
-		if $version == $versioncheck Then
-
-		Else
-
-			$iMsgBoxAnswer = MsgBox(52,"Neue Version verfügbar","Es ist eine neue Version verfügbar!" & @CRLF & "Soll diese heruntergeladen und installiert werden?")
-			Select
-				Case $iMsgBoxAnswer = 6 ;Yes
-					if IsAdmin() Then
-
-						Run("C:\Program Files\SBTVPrograms\installer\NewVersionInstaller.exe")
-					Else
-						MsgBox(16, "Error", "Bitte starten Sie das Programm als Administrator!")
-					EndIf
-					_endScript()
-
-				Case $iMsgBoxAnswer = 7 ;No
-					MsgBox(16, "Info", "Sie müssen die neue Version installieren um das Programm zu starten")
-					_endScript()
-			EndSelect
-		EndIf
+		_checkVersion()
 
 		LoginGUI()
 
@@ -347,6 +328,7 @@ EndFunc
 
 func _GUIMainMenu()
 
+	$data = _getMainMenuData()
 	if WinExists("Steam Punk Loading") then
 		WinKill("Steam Punk Loading")
 	EndIf
@@ -375,7 +357,9 @@ func _GUIMainMenu()
 	GUICtrlSetTip(-1, "Bug Report / Feature Request")
 	$GroupUserbereich = GUICtrlCreateGroup("Userbereich", 8, 88, 97, 289)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
-
+	$labelCountdown = GUICtrlCreateLabel("Nächstes Update in: 00:00:00", 103, 376, 400, 22)
+	GUICtrlSetFont(-1, 12, 400, 0, "Georgia")
+	GUICtrlSetColor(-1, 0xC0C0C0)
 	$GroupUserbereich = GUICtrlCreateGroup("Adminbereich",500, 88, 97, 289)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 	$buttonAdminSettings = GUICtrlCreateButton("Admin Verwaltung", 527,120,40,40,$BS_ICON)
@@ -418,6 +402,38 @@ func _GUIMainMenu()
 				GUIDelete($MainMenu)
 				_BugReportGui()
 		EndSwitch
+		Sleep(20)
+		if $nowsec <> @SEC Then
+			Global $dateDiffDays = _DateDiff('d', _NowCalc(),$data)
+			if $dateDiffDays <= 0 Then
+				$dateDiffDays = 0
+			EndIf
+			Global $dateMinusDays = _DateAdd("d", $dateDiffDays,_NowCalc())
+
+			Global $dateDiffHr = _DateDiff('h', $dateMinusDays,$data)
+			if $dateDiffHr <= 0 Then
+				$dateDiffHr = 0
+			EndIf
+			Global $dateMinusHr = _DateAdd("h", $dateDiffHr,$dateMinusDays)
+
+
+			Global $dateDiffMin = _DateDiff('n', $dateMinusHr,$data)
+			if $dateDiffmin <= 0 Then
+				$dateDiffmin = 0
+			EndIf
+			Global $dateMinusmin = _DateAdd("n", $dateDiffmin,$dateMinusHr)
+
+
+			Global $dateDiffSec = _DateDiff('s', $dateMinusmin,$data)
+			if $dateDiffSec <= 0 Then
+				$dateDiffSec = 0
+			EndIf
+			GUICtrlSetData($labelCountdown,"Nächstes Update in: " & $dateDiffDays & " days " & $dateDiffHr & " hrs " & $dateDiffMin & " min " & $dateDiffSec & " sec")
+			if $dateDiffDays == 0 and $dateDiffHr == 0 and $dateDiffMin == 0 and $dateDiffSec == 0 Then
+				_checkVersion()
+			EndIf
+			$nowsec = @SEC
+		EndIf
 	Until False
 
 EndFunc
@@ -850,3 +866,67 @@ EndFunc
 
 ;==================================================================================================================
 
+
+; Function: _getMainMenuData()() ;========================================================================================
+;
+; Name...........: _getMainMenuData()
+; Beschreibung ...: Daten für das Hauptmenü werden zurückgegeben
+; Syntax.........: _getMainMenuData()
+; Parameters ....: -
+; Return values .: Die Daten vom Server als Array
+;				   0 für Error
+; Autor ........: SplashFlo
+;
+; ;================================================================================================================
+
+func _getMainMenuData()
+
+
+	$port = _buildConnection()
+	$data = _UdpSend($ip,$port,"getMainMenuData|" & $Username)
+	if $data == 0 Then
+		errormessage(002,true)
+	EndIf
+	Return $data
+
+EndFunc
+
+;==================================================================================================================
+
+
+; Function: _checkVersion()() ;========================================================================================
+;
+; Name...........: _checkVersion()
+; Beschreibung ...: Überprüft auf eine neue Version
+; Syntax.........: _checkVersion()
+; Parameters ....: -
+; Return values .: Die Daten vom Server als Array
+;				   0 für Error
+; Autor ........: SplashFlo
+;
+; ;================================================================================================================
+
+func _checkVersion()
+
+	$versioncheck = _UdpSend($ip,"9898","version")
+	if $version == $versioncheck Then
+
+	Else
+
+		$iMsgBoxAnswer = MsgBox(52,"Neue Version verfügbar","Es ist eine neue Version verfügbar!" & @CRLF & "Soll diese heruntergeladen und installiert werden?")
+		Select
+			Case $iMsgBoxAnswer = 6 ;Yes
+				if IsAdmin() Then
+
+					Run("C:\Program Files\SBTVPrograms\installer\NewVersionInstaller.exe")
+				Else
+					MsgBox(16, "Error", "Bitte starten Sie das Programm als Administrator!")
+				EndIf
+				_endScript()
+
+			Case $iMsgBoxAnswer = 7 ;No
+				MsgBox(16, "Info", "Sie müssen die neue Version installieren um das Programm zu starten")
+				_endScript()
+		EndSelect
+	EndIf
+EndFunc

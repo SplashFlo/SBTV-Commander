@@ -38,6 +38,7 @@ OnAutoItExitRegister("_exit")
 Global $UDPPort = $CmdLineRaw
 Global $versioningFile = "C:\SBTV Commander\Version\version.ini"
 $login = 0
+$idle = 0
 $loginStart = 0
 $c1 = 0
 $c2 = 0
@@ -45,6 +46,7 @@ $g_IP = "10.53.32.64"
 $scriptdir = "C:\SBTV Commander"
 $version = IniRead($versioningFile, "Version", "current", "err")
 $userini = "C:\SBTV Commander\users\users.ini"
+$versioningFile = "C:\SBTV Commander\Version\version.ini"
 $portsFile = "C:\SBTV Commander\connections\currentConnections.ini"
 $logfile = "C:\SBTV Commander\logs\main.log"
 OnAutoItExitRegister("_exit") ;Falls das Script beendet wird, wird folgendes gesendet
@@ -121,6 +123,11 @@ While 1 ;Entlosschleife
 		EndIf
 	EndIf
 	Sleep(20)
+	$idle = $idle + 1
+	if $idle > 1500 Then
+		_FileWriteLog($logile, "Connection closed because of idling too long" & @CRLF & @CRLF)
+		_exit()
+	EndIf
 WEnd
 ;==================================================================================================================
 
@@ -185,6 +192,9 @@ func _arrayRequest($aData)
 			;				 1 = Bug wurde eingeragen
 			_ReportBug()
 
+		case $splitString[1] = "getMainMenuData"
+			;Return Values.: Daten für den Benutzer
+			_getMainMenuData()
 		case Else
 			_exit()
 	EndSelect
@@ -405,7 +415,33 @@ func _login()
 	Exit
 EndFunc
 
+; ;===============================================================================================================
+
+
+; _getMainMenuData ;==========================================================================================================
+;
+; Name...........: _getMainMenuData
+; Beschreibung ...: sendet die Daten vom Client fürs Hauptmenü zurück (Rechte,...)
+; Syntax.........: _getMainMenuData()
+; Parameters ....: -
+; Return values .: -
+; Autor ........: Florian Krismer
+;
 ; ;================================================================================================================
+
+
+func _getMainMenuData()
+
+	$username = $splitString[2]
+	$newVersion = IniRead($versioningFile,"Version", "newVersionDate",0)
+	UDPSend($aClientArray,$newVersion)
+	_exit()
+
+
+EndFunc
+
+
+; ;===============================================================================================================
 
 
 ; exit ;==========================================================================================================
