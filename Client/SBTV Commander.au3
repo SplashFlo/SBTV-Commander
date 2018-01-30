@@ -45,7 +45,7 @@ OnAutoItExitRegister("_endScript")
 ; Variablen
 ;=================================================================================================================
 
-$version = 0.1 ;Aktuelle Versionsnumemr als double
+$version = 0.2 ;Aktuelle Versionsnumemr als double
 $clientPath = "C:\Program Files\SBTVPrograms\Commander" ;Pfad nach Installation von dem Programm
 Global $ip = "10.53.32.64"
 Global $aPos[2]
@@ -80,7 +80,33 @@ func startup()
 		if $no == 1 Then
 			errormessage(001,true)
 		EndIf
+
+		$versioncheck = _UdpSend($ip,"9898","version")
+		if $version == $versioncheck Then
+
+		Else
+
+			$iMsgBoxAnswer = MsgBox(52,"Neue Version verfügbar","Es ist eine neue Version verfügbar!" & @CRLF & "Soll diese heruntergeladen und installiert werden?")
+			Select
+				Case $iMsgBoxAnswer = 6 ;Yes
+					if IsAdmin() Then
+
+						Run("C:\Program Files\SBTVPrograms\installer\NewVersionInstaller.exe")
+					Else
+						MsgBox(16, "Error", "Bitte starten Sie das Programm als Administrator!")
+					EndIf
+					_endScript()
+
+				Case $iMsgBoxAnswer = 7 ;No
+					MsgBox(16, "Info", "Sie müssen die neue Version installieren um das Programm zu starten")
+					_endScript()
+			EndSelect
+		EndIf
+
 		LoginGUI()
+
+
+
 EndFunc
 
 ;==================================================================================================================

@@ -1,5 +1,4 @@
 #RequireAdmin
-
 #include <Zip.au3>
 #include <FTPEx.au3>
 #include <MsgBoxConstants.au3>

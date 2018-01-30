@@ -38,6 +38,7 @@ $loginStart = 0
 $c1 = 0
 $c2 = 0
 $serverPort = 9898
+$configFile = "C:\SBTV Commander\Version\version.ini"
 $portsFile = "C:\SBTV Commander\connections\currentConnections.ini"
 $versioningFile = "C:\SBTV Commander\Version\version.ini"
 $version = IniRead($versioningFile, "Version", "currentVersion", "err")
@@ -91,6 +92,7 @@ While 1 ;Entlosschleife
 		ConsoleWrite("Intialising new connection" & @CRLF)
 		Global $aClientArray[4] = [$aSocket[0], $aSocket[1], $aData[1], $aData[2]]
 		if $aData[0] = "version" Then
+			$version = IniRead($configFile,"Version", "current","err")
 			UDPSend($aClientArray,$version)
 		ElseIf $aData[0] > 1999 And $aData[0] < 9999 Then
 				ConsoleWrite("Opening new Connection for port: " & $aData[0] & @CRLF)
