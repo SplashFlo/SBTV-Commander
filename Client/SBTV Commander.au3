@@ -649,12 +649,16 @@ func _reportBugGUI()
 				_BugReportGui()
 
 			Case $ButtonSenden
-				GUISetState(@SW_DISABLE)
+				GUISetState(@SW_HIDE)
+				$startnew = Run(@ScriptDir & "\includings\_GDIPlus_Loading.exe " & "Sending data...|" & $apos[0] & "|" & $apos[1])
 				$shortDes = GUICtrlRead($inputKurzbeschreibung)
 				$longDes = GUICtrlRead($editBeschreibung)
 				$newport = _buildConnection()
 				$request = _UdpSend($ip,$newport,"ReportBug|" & $Username & "|" & $shortDes & "|" & $longDes)
-				GUISetState(@SW_ENABLE)
+				GUISetState(@SW_SHOW)
+				if WinExists("Steam Punk Loading") then
+					WinKill("Steam Punk Loading")
+				EndIf
 				if $request == 1 Then
 					MsgBox(0, "Info", "Dein Bug Report wurde erfolgreich versendet!" & @CRLF & "Danke für deine Unterstützung!")
 					Global $aPos = WinGetPos($ReportBugGui)
@@ -698,12 +702,16 @@ func _featureRequestGui()
 				_BugReportGui()
 
 			Case $ButtonSenden
-				GUISetState(@SW_DISABLE)
+				$startnew = Run(@ScriptDir & "\includings\_GDIPlus_Loading.exe " & "Sending data...|" & $apos[0] & "|" & $apos[1])
+				GUISetState(@SW_HIDE)
 				$shortDes = GUICtrlRead($inputKurzbeschreibung)
 				$longDes = GUICtrlRead($editBeschreibung)
 				$newport = _buildConnection()
 				$request = _UdpSend($ip,$newport,"RequestFeature|" & $Username & "|" & $shortDes & "|" & $longDes)
-				GUISetState(@SW_ENABLE)
+				GUISetState(@SW_SHOW)
+				if WinExists("Steam Punk Loading") then
+					WinKill("Steam Punk Loading")
+				EndIf
 				if $request == 1 Then
 					MsgBox(0, "Info", "Dein Request wurde erfolgreich versendet!" & @CRLF & "Danke für deine Unterstützung!")
 					Global $aPos = WinGetPos($FeatureRequestGui)
@@ -815,3 +823,4 @@ EndFunc
 
 
 ;==================================================================================================================
+
