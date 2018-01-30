@@ -14,13 +14,15 @@
 #include <GUIConstantsEx.au3>
 #include <WindowsConstants.au3>
 
+Global $splashtext = "Installing Software: "
 Global $run = false
 Global $runcopy = true
 
 if FileExists(@ScriptDir & "\cfg\SBTV Commander.exe") Then
 
 Else
-	MsgBox($MB_ICONERROR, "Fehler", "Die Installation ist beschädigt. Bitte laden Sie das Programm erneut herunter")
+
+	MsgBox($MB_ICONERROR,"Error","Die Installation ist beschädigt. Bitte laden Sie das Programm erneut herunter")
 	Exit
 EndIf
 
@@ -66,7 +68,7 @@ Do
 Until False
 
 Func PlayAnim()
-	$hHBmp_BG = _GDIPlus_LineProgressbar($iPerc, $iW, $iH, "Installing Software: ", 0xF02187E7, $sFont)
+	$hHBmp_BG = _GDIPlus_LineProgressbar($iPerc, $iW, $iH, $splashtext, 0xF02187E7, $sFont)
 	$hB = GUICtrlSendMsg($iPic, $STM_SETIMAGE, $IMAGE_BITMAP, $hHBmp_BG)
 	If $hB Then _WinAPI_DeleteObject($hB)
 	_WinAPI_DeleteObject($hHBmp_BG)
@@ -95,21 +97,30 @@ Func PlayAnim()
 			$copy = DirCopy(@ScriptDir & "\cfg", "C:\Program Files\SBTVPrograms\Commander\",1)
 
 			if $copy == 0 Then
+				GUIRegisterMsg($WM_TIMER, "")
+				_WinAPI_DeleteObject($hHBmp_BG)
 				_GDIPlus_Shutdown()
+				GUIDelete()
 				MsgBox($MB_ICONERROR, "Fehler", "Das Programm konnte nicht installiert werden. Bitte versuchen sie es erneut!")
 				Exit
 			Else
 				$shortcut = FileCreateShortcut("C:\Program Files\SBTVPrograms\Commander\SBTV Commander.exe",@DesktopDir & "\SBTV Commander.lnk")
 				if $shortcut == 0 Then
+					GUIRegisterMsg($WM_TIMER, "")
+					_WinAPI_DeleteObject($hHBmp_BG)
 					_GDIPlus_Shutdown()
+					GUIDelete()
 					MsgBox(0, $MB_ICONERROR, "Fehler", "Das Programm wurde zwar richtig installiert, aber es konnte keine Verknüpfung auf dem Desktop erstellt werden!")
 				EndIf
-			$filemove = FileMove("C:\Program Files\SBTVPrograms\Commander\includings\Installer.exe", "C:\Program Files\SBTVPrograms\installer\Installer.exe",1+8)
+			$filemove = FileMove("C:\Program Files\SBTVPrograms\Commander\includings\NewVersionInstaller.exe", "C:\Program Files\SBTVPrograms\installer\NewVersionInstaller.exe",1+8)
 			if $filemove == 0 Then
-				If FileExists("C:\Program Files\SBTVPrograms\installer\Installer.exe") Then
+				If FileExists("C:\Program Files\SBTVPrograms\installer\NewVersionInstaller.exe") Then
 
 				Else
+				GUIRegisterMsg($WM_TIMER, "")
+				_WinAPI_DeleteObject($hHBmp_BG)
 				_GDIPlus_Shutdown()
+				GUIDelete()
 				MsgBox(0, "error", "error while moving installer")
 				EndIf
 			EndIf
