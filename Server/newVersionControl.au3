@@ -44,12 +44,20 @@ func _startup()
 				case 11 to 20
 					ConsoleWrite("Sleeping: 5 sec" & @CRLF & @CRLF)
 					Sleep(5000)
-				case 21 to 60
-					ConsoleWrite("Sleeping: 10 sec" & @CRLF & @CRLF)
+				case 21 to 30
+					ConsoleWrite("Sleeping: 20 sec" & @CRLF & @CRLF)
 					sleep(10000)
-				case 61 to 500
+				case 31 to 50
+					ConsoleWrite("Sleeping: 30 sec" & @CRLF & @CRLF)
+					Sleep(20000)
+				case 51 to 60
+					ConsoleWrite("Sleeping: 50 sec" & @CRLF & @CRLF)
+				case 61 to 100
 					ConsoleWrite("Sleeping: 1 min" & @CRLF & @CRLF)
 					sleep(60000)
+				case 101 to 500
+					ConsoleWrite("Sleeping: 1,6min" & @CRLF & @CRLF)
+					Sleep(100000)
 				case 501 to 1000
 					ConsoleWrite("Sleeping: 8 min" & @CRLF & @CRLF)
 					sleep(480000)
