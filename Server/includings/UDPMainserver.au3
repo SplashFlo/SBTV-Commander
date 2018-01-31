@@ -13,7 +13,6 @@
 ;#pragma compile(LegalTrademarks, '"Trademark something1, and some text in "quotes" etc...')
 #pragma compile(CompanyName, 'SplashBirdTV')
 
-
 ;=================================================================================================================
 
 
@@ -48,7 +47,7 @@ $version = IniRead($versioningFile, "Version", "current", "err")
 $userini = "C:\SBTV Commander\users\users.ini"
 $versioningFile = "C:\SBTV Commander\Version\version.ini"
 $portsFile = "C:\SBTV Commander\connections\currentConnections.ini"
-$logfile = "C:\SBTV Commander\logs\main.log"
+Global $logfile = "C:\SBTV Commander\logs\main.log"
 OnAutoItExitRegister("_exit") ;Falls das Script beendet wird, wird folgendes gesendet
 
 ;=================================================================================================================
@@ -95,7 +94,7 @@ $aSocket = UDPBind($g_IP, $UDPPort) ; Öffnet einen Socket mit der IP $g_IP und 
 
 If @error Then
 	_FileWriteLog($logfile, "ERROR: Could not start UDP Service" & @CRLF)
-	_exit()
+	exit
 EndIf
 
 ;------------------------------------------------------
@@ -124,9 +123,9 @@ While 1 ;Entlosschleife
 	EndIf
 	Sleep(20)
 	$idle = $idle + 1
-	if $idle > 1500 Then
-		_FileWriteLog($logile, "Connection closed because of idling too long" & @CRLF & @CRLF)
-		_exit()
+	if $idle > 500 Then
+		_FileWriteLog($logfile, "Connection closed because of idling too long" & @CRLF & @CRLF)
+		exit
 	EndIf
 WEnd
 ;==================================================================================================================
@@ -148,7 +147,7 @@ func _normalRequest($aData)
 		case "version"
 			_FileWriteLog($logfile, "Requested new Version " & @CRLF & "Send new version" & @CRLF & @CRLF)
 			UDPSend($aClientArray, $version)
-			_exit()
+			exit
 		case Else
 			_FileWriteLog($logfile, "Unknown call")
 	EndSwitch
@@ -195,8 +194,21 @@ func _arrayRequest($aData)
 		case $splitString[1] = "getMainMenuData"
 			;Return Values.: Daten für den Benutzer
 			_getMainMenuData()
+
+		case $splitString[1] = "getRequests"
+			;Return Values.: Daten für den Benutzer
+			;0 = Fehler
+			_getRequests()
+		case $splitString[1] = "viewRequests"
+			;Return Values.: Daten für den Benutzer
+			;0 = Fehler
+			_viewRequests()
+		case $splitString[1] = "deleteRequests"
+			;Return Values.: 1 = OK
+			;0 = Fehler
+			_deleteRequests()
 		case Else
-			_exit()
+			exit
 	EndSelect
 
 EndFunc
@@ -289,7 +301,7 @@ func _RequestFeature()
 	Else
 		UDPSend($aClientArray,"1")
 	EndIf
-	_exit()
+	exit
 
 EndFunc
 
@@ -337,7 +349,7 @@ func _ReportBug()
 	Else
 		UDPSend($aClientArray,"1")
 	EndIf
-	_exit()
+	exit
 
 EndFunc
 
@@ -357,19 +369,37 @@ EndFunc
 
 func _newPass()
 
-	$username = $splitString[1]
-	$passwordCrypted = $splitString[2]
+	$username = $splitString[2]
+	$passwordCrypted = $splitString[3]
 	$currentPassCrypted = IniRead($userini, "users",$username,"err")
-
+	FileWrite($logfile, "User: " & $username & " wants to chane his password" & @CRLF)
 	if $currentPassCrypted == "err" Then
+		FileWrite($logfile, "Password not changed ini error" & @CRLF)
 		UDPSend($aClientArray,"0")
 	ElseIf $currentPassCrypted == "new" Then
 		IniWrite($userini, "users", $username, $passwordCrypted)
 		if @error Then
 			UDPSend($aClientArray,"0")
+			FileWrite($logfile, "Password not changed ini error2" & @CRLF)
 		Else
 			UDPSend($aClientArray, "1")
+			FileWrite($logfile, "Password successfully changed" & @CRLF)
 		EndIf
+		ElseIf $splitString[0] == 4 Then
+			FileWrite($logfile, "Got password change from logged in user" & @CRLF)
+			if $splitString[4] == "1" Then
+				IniWrite($userini, "users", $username, $passwordCrypted)
+				if @error Then
+					UDPSend($aClientArray,"0")
+					FileWrite($logfile, "Password not changed ini error3" & @CRLF)
+				Else
+					UDPSend($aClientArray, "1")
+					FileWrite($logfile, "Password successfully changed" & @CRLF)
+				EndIf
+			Else
+				UDPSend($aClientArray,"0")
+				FileWrite($logfile, "Password not changed wrong parameters. got : " & $splitString[4] & @CRLF)
+			EndIf
 	EndIf
 
 	Exit
@@ -435,7 +465,7 @@ func _getMainMenuData()
 	$username = $splitString[2]
 	$newVersion = IniRead($versioningFile,"Version", "newVersionDate",0)
 	UDPSend($aClientArray,$newVersion)
-	_exit()
+	exit
 
 
 EndFunc
@@ -448,7 +478,7 @@ EndFunc
 ;
 ; Name...........: _exit
 ; Beschreibung ...: exit of script
-; Syntax.........: _exit()
+; Syntax.........: exit
 ; Parameters ....: -
 ; Return values .: -
 ; Autor ........: Florian Krismer
@@ -463,5 +493,150 @@ func _exit()
 	FileWrite($logfile, "--------------------------------------------End of log--------------------------------------------" & @CRLF & @CRLF & @CRLF)
 	Exit
 
+
+EndFunc
+
+; ;================================================================================================================
+
+
+; _getMainMenuData ;===============================================================================================
+;
+; Name...........: _getRequests
+; Beschreibung ...: sendet die Requests zurück
+; Syntax.........: _getRequests()
+; Parameters ....: -
+; Return values .: -
+; Autor ........: Florian Krismer
+;
+; ;================================================================================================================
+
+
+func _getRequests()
+
+	FileWrite($logfile, "Getting request for Reportings" & @CRLF)
+	$bugReports = ""
+	$section = IniReadSection($scriptdir & "\requests\Requests.ini", "BugReport")
+	if @error Then
+		FileWrite($logfile, "error while reading bug ini" & @CRLF)
+	Else
+		if $section[0][0] == 0 Then
+			FileWrite($logfile, "no bugs found" & @CRLF)
+		Else
+
+			for $i = 1 to $section[0][0]
+
+				$bugReports = $bugReports & "Bug Report User: " & StringTrimRight($section[$i][0],1) & "     ID:" & StringRight($section[$i][0],1) & "     Message: " & $section[$i][1] & "|"
+
+			Next
+
+		EndIf
+	EndIf
+	$section = IniReadSection($scriptdir & "\requests\Requests.ini", "FeatureRequest")
+	if @error Then
+		FileWrite($logfile, "error while reading features ini" & @CRLF)
+	Else
+
+		if $section[0][0] == 0 Then
+			FileWrite($logfile, "no feature requests found" & @CRLF)
+		Else
+			for $i = 1 to $section[0][0]
+
+				$bugReports = $bugReports & "Feature Request User: " & StringTrimRight($section[$i][0],1) & "     ID:" & StringRight($section[$i][0],1) & "     Message: " & $section[$i][1] & "|"
+
+			Next
+		EndIf
+	EndIf
+	if $bugReports == "" Then
+		FileWrite($logfile, "no reports found" & @CRLF)
+		UDPSend($aClientArray, "0")
+	Else
+		FileWrite($logfile, "sending report" & @CRLF)
+		UDPSend($aClientArray,$bugReports)
+	EndIf
+	Exit
+
+
+EndFunc
+
+func _viewRequests()
+
+	FileWrite($logfile, "Getting request for viewing Reportings" & @CRLF)
+	$userID = $splitString[2]
+	FileWrite($logfile, "Request ID: " & $userID	 & @CRLF)
+	$bug = IniRead($scriptdir & "\requests\Requests.ini", "BugReport",$userID, "err")
+	if $bug == "err" Then
+		$report = IniRead($scriptdir & "\requests\Requests.ini", "FeatureRequest",$userID, "err")
+		if $report == "err" Then
+			FileWrite($logfile, "error no request found" & @CRLF)
+			UDPSend($aClientArray,"0")
+			Exit
+		EndIf
+		FileWrite($logfile, "Got Request for Feature Reporting" & @CRLF)
+		$reportList = FileRead($scriptdir & "\requests\feature\" & $userID & ".txt")
+		if @error then
+			FileWrite($logfile, "error feature not found" & @CRLF)
+			UDPSend($aClientArray,"0")
+			Exit
+		EndIf
+		FileWrite($logfile, "sending feature data" & @CRLF)
+		UDPSend($aClientArray,"feature|" & $reportList)
+		Exit
+
+	Else
+		FileWrite($logfile, "Getting request for bugs" & @CRLF)
+		$reportList = FileRead("C:\SBTV Commander\requests\bug\"& $userID &".txt")
+		if @error then
+			FileWrite($logfile, "error no textfile found" & @CRLF)
+			UDPSend($aClientArray,"0")
+			Exit
+		EndIf
+		FileWrite($logfile, "Sending bug report" & @CRLF)
+		UDPSend($aClientArray,"bug|" & $reportList)
+		Exit
+	EndIf
+
+EndFunc
+
+func _deleteRequests()
+
+	FileWrite($logfile, "Getting request for deleting Reportings" & @CRLF)
+	$userID = $splitString[2]
+	FileWrite($logfile, "Request ID: " & $userID & @CRLF)
+	$bug = IniRead($scriptdir & "\requests\Requests.ini", "BugReport",$userID, "err")
+	if $bug == "err" Then
+		$report = IniDelete($scriptdir & "\requests\Requests.ini", "FeatureRequest",$userID)
+		if $report == 0 Then
+			FileWrite($logfile, "error no request found" & @CRLF)
+			UDPSend($aClientArray,"0")
+			Exit
+		EndIf
+		FileWrite($logfile, "Got Request for deleting Feature Reporting" & @CRLF)
+		$reportList = FileDelete($scriptdir & "\requests\feature\" & $userID & ".txt")
+		if @error then
+			FileWrite($logfile, "error feature not deleted" & @CRLF)
+			UDPSend($aClientArray,"0")
+			Exit
+		EndIf
+		FileWrite($logfile, "deleted feature data" & @CRLF)
+		UDPSend($aClientArray,"1")
+		Exit
+
+	Else
+		FileWrite($logfile, "Getting request for deleting bugs" & @CRLF)
+		IniDelete($scriptdir & "\requests\Requests.ini", "BugReport",$userID)
+		if @error Then
+			FileWrite($logfile, "error bug ini not deleted" & @CRLF)
+			UDPSend($aClientArray,"0")
+		EndIf
+		$reportList = FileDelete("C:\SBTV Commander\requests\bug\"& $userID &".txt")
+		if @error then
+			FileWrite($logfile, "error no textfile found" & @CRLF)
+			UDPSend($aClientArray,"0")
+			Exit
+		EndIf
+		FileWrite($logfile, "deleted bug report" & @CRLF)
+		UDPSend($aClientArray,"1")
+		Exit
+	EndIf
 
 EndFunc

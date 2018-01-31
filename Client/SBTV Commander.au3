@@ -22,6 +22,7 @@ OnAutoItExitRegister("_endScript")
 
 #include <File.au3>
 #include <Date.au3>
+#include <GuiListBox.au3>
 #include <Crypt.au3>
 #include <GuiImageList.au3>
 #include <GDIPlus.au3>
@@ -45,7 +46,7 @@ OnAutoItExitRegister("_endScript")
 ; Variablen
 ;=================================================================================================================
 
-$version = 0.2 ;Aktuelle Versionsnumemr als double
+$version = 0.3 ;Aktuelle Versionsnumemr als double
 $clientPath = "C:\Program Files\SBTVPrograms\Commander" ;Pfad nach Installation von dem Programm
 Global $ip = "10.53.32.64"
 Global $aPos[2]
@@ -81,7 +82,6 @@ func startup()
 		if $no == 1 Then
 			errormessage(001,true)
 		EndIf
-
 		_checkVersion()
 
 		LoginGUI()
@@ -226,7 +226,7 @@ func _UdpSend($ip,$port,$data,$waitForAnswer = true)
 
 	if $waitForAnswer == true Then
 		Do
-		Global $UDPReceivedData = UDPRecv($udpSocket, 128) ;er wartet auf eine Antwort des Servers
+		Global $UDPReceivedData = UDPRecv($udpSocket, 65000) ;er wartet auf eine Antwort des Servers
 		$loopCounter = $loopCounter + 1
 		if $loopCounter >= 20 Then
 			if WinExists("Steam Punk Loading") then
@@ -327,7 +327,7 @@ EndFunc
 
 
 func _GUIMainMenu()
-
+	$refreshTime = 200
 	$data = _getMainMenuData()
 	if WinExists("Steam Punk Loading") then
 		WinKill("Steam Punk Loading")
@@ -368,6 +368,9 @@ func _GUIMainMenu()
 	$buttonTeamspeak = GUICtrlCreateButton("Teamspeak", 527,180,40,40,$BS_ICON)
 	GUICtrlSetImage(-1, @ScriptDir & "\icons\teamspeak.ico",-1)
 	GUICtrlSetTip(-1,"Teamspeak Verwaltung")
+	$LabelRefreshing = GUICtrlCreateLabel("Refreshing Data...", 280, 405, 90, 17)
+	GUICtrlSetColor(-1, 0xFFFFFF)
+	GUICtrlSetState(-1,$GUI_HIDE)
 	GUISetState(@SW_SHOW)
 
 	Global $hHBmp_BG, $hB, $iPerc = 0, $iSleep = 20, $fPower = 0.2
@@ -401,8 +404,35 @@ func _GUIMainMenu()
 				_GDIPlus_Shutdown()
 				GUIDelete($MainMenu)
 				_BugReportGui()
+
+			Case $ButtonAccount
+				Global $aPos = WinGetPos($MainMenu)
+				GUIRegisterMsg($WM_TIMER, "")
+				_WinAPI_DeleteObject($hHBmp_BG)
+				_GDIPlus_Shutdown()
+				GUIDelete($MainMenu)
+				_GUImyAccount()
+
+			Case $buttonTeamspeak
+				MsgBox(0, "Info", "Dieses Feature ist derzeit noch nicht verfügbar!")
+
+			Case $buttonAdminSettings
+				Global $aPos = WinGetPos($MainMenu)
+				GUIRegisterMsg($WM_TIMER, "")
+				_WinAPI_DeleteObject($hHBmp_BG)
+				_GDIPlus_Shutdown()
+				GUIDelete($MainMenu)
+				_GUIadminSettings()
 		EndSwitch
 		Sleep(20)
+		if $refreshTime <= 0 Then
+			GUICtrlSetState($LabelRefreshing,$GUI_SHOW)
+			$data = _getMainMenuData()
+			$refreshTime = 200
+			GUICtrlSetState($LabelRefreshing,$GUI_HIDE)
+		Else
+			$refreshTime = $refreshTime - 1
+		EndIf
 		if $nowsec <> @SEC Then
 			Global $dateDiffDays = _DateDiff('d', _NowCalc(),$data)
 			if $dateDiffDays <= 0 Then
@@ -448,7 +478,7 @@ Func PlayAnim()
         $iPerc = 0
         $fPower = 0.2
     EndIf
-EndFunc   ;==>PlayAnim
+EndFunc
 
 
 Func _GDIPlus_DrawingText($fProgress, $iW, $iH, $sText = "SBTV", $iColor = 0xFF00FF33)
@@ -672,8 +702,10 @@ func _reportBugGUI()
 	$labelArt = GUICtrlCreateLabel("Kurzbeschreibung", 120, 24, 215, 33)
 	GUICtrlSetFont(-1, 18, 800, 0, "MS Sans Serif")
 	$inputKurzbeschreibung = GUICtrlCreateInput("Das Hauptmenü öffnet sich nicht", 88, 112, 289, 21)
+	GUICtrlSetLimit(-1, 32)
 	$labelBeschreibung = GUICtrlCreateLabel("Beschreibe kurz deinen Bug", 160, 80, 137, 17)
 	$editBeschreibung = GUICtrlCreateEdit("", 8, 224, 441, 273)
+	GUICtrlSetLimit(-1, 500)
 	GUICtrlSetData(-1, "Wenn man auf login drückt öffnet sich das Hauptmenü nicht")
 	$Label1 = GUICtrlCreateLabel("Detailliert Beschreibung", 88, 160, 285, 33)
 	GUICtrlSetFont(-1, 18, 800, 0, "MS Sans Serif")
@@ -696,8 +728,7 @@ func _reportBugGUI()
 				$shortDes = GUICtrlRead($inputKurzbeschreibung)
 				$longDes = GUICtrlRead($editBeschreibung)
 				$newport = _buildConnection()
-				$request = _UdpSend($ip,$newport,"ReportBug|" & $Username & "|" & $shortDes & "|" & $longDes)
-				GUISetState(@SW_SHOW)
+				$request = _UdpSend($ip,$newport,"ReportBug|" & $Username & "B" & "|" & $shortDes & "|" & $longDes)
 				if WinExists("Steam Punk Loading") then
 					WinKill("Steam Punk Loading")
 				EndIf
@@ -726,8 +757,10 @@ func _featureRequestGui()
 	$labelArt = GUICtrlCreateLabel("Kurzbeschreibung", 128, 24, 215, 33)
 	GUICtrlSetFont(-1, 18, 800, 0, "MS Sans Serif")
 	$inputKurzbeschreibung = GUICtrlCreateInput("", 88, 112, 289, 21)
+	GUICtrlSetLimit(-1, 32)
 	$labelBeschreibung = GUICtrlCreateLabel("Beschreibe kurz was du vorschlagen würdest", 128, 80, 218, 17)
 	$editBeschreibung = GUICtrlCreateEdit("", 8, 224, 441, 273)
+	GUICtrlSetLimit(-1, 500)
 	$Label1 = GUICtrlCreateLabel("Detailliert Beschreibung", 88, 160, 285, 33)
 	GUICtrlSetFont(-1, 18, 800, 0, "MS Sans Serif")
 	GUISetState(@SW_SHOW)
@@ -749,8 +782,7 @@ func _featureRequestGui()
 				$shortDes = GUICtrlRead($inputKurzbeschreibung)
 				$longDes = GUICtrlRead($editBeschreibung)
 				$newport = _buildConnection()
-				$request = _UdpSend($ip,$newport,"RequestFeature|" & $Username & "|" & $shortDes & "|" & $longDes)
-				GUISetState(@SW_SHOW)
+				$request = _UdpSend($ip,$newport,"RequestFeature|" & $Username & "F" & "|" & $shortDes & "|" & $longDes)
 				if WinExists("Steam Punk Loading") then
 					WinKill("Steam Punk Loading")
 				EndIf
@@ -930,3 +962,284 @@ func _checkVersion()
 		EndSelect
 	EndIf
 EndFunc
+
+;==================================================================================================================
+
+
+; Function: _GUImyAccount()() ;=====================================================================================
+;
+; Name...........: _GUImyAccount()
+; Beschreibung ...: Persönliche Einstellungen
+; Syntax.........: _GUImyAccount()
+; Parameters ....: -
+; Return values .: -
+; Autor ........: SplashFlo
+;
+; ;================================================================================================================
+
+func _GUImyAccount()
+
+	$ProfileEditorGUI = GUICreate("Profileinstellungen für: " & $Username, 615, 437, $apos[0], $apos[1])
+	$BGimage = GUICtrlCreatePic(@scriptdir & "\icons\guibackground.jpg",0,0,615,437,$WS_CLIPSIBLINGS)
+	$GroupMyAccount = GUICtrlCreateGroup("Mein Account", 8, 40, 145, 113)
+	GUICtrlSetFont(-1, 12, 800, 0, "MS Sans Serif")
+	GUICtrlSetColor(-1, 0xFFFFFF)
+	$ButtonChangePassword = GUICtrlCreateButton("Change Password", 56, 96, 40, 40, $BS_ICON)
+	GUICtrlSetImage(-1, "C:\Users\florian.krismer\Documents\GitHub\SBTV-Commander\Client\icons\changePassword.ico", -1)
+	$labelchangepass = GUICtrlCreateLabel("Passwort ändern", 24, 72, 104, 20)
+	GUICtrlSetFont(-1, 10, 400, 0, "MS Sans Serif")
+	GUICtrlCreateGroup("", -99, -99, 1, 1)
+	GUICtrlSetTip(-1, "Passwort ändern")
+	$Group1 = GUICtrlCreateGroup("Hilfe und Support", 424, 40, 177, 113)
+	GUICtrlSetFont(-1, 12, 800, 0, "MS Sans Serif")
+	GUICtrlSetColor(-1, 0xFFFFFF)
+	$buttonRequestHelp = GUICtrlCreateButton("Hilfe Anfordern", 488, 96, 40, 40, $BS_ICON)
+	GUICtrlSetImage(-1, "C:\Users\florian.krismer\Documents\GitHub\SBTV-Commander\Client\icons\support.ico", -1)
+	$labelrequesthelp = GUICtrlCreateLabel("Hilfe Anfordern", 464, 72, 92, 20)
+	GUICtrlSetFont(-1, 10, 400, 0, "MS Sans Serif")
+	GUICtrlCreateGroup("", -99, -99, 1, 1)
+	GUICtrlSetTip(-1, "Passwort ändern")
+	$Buttonback = GUICtrlCreateButton("Zurück", 8, 8, 75, 25)
+	$labelNews = GUICtrlCreateLabel("News", 152, 16, 271, 17)
+	GUICtrlSetState(-1,$GUI_HIDE)
+	GUISetState(@SW_SHOW)
+
+	While 1
+		$nMsg = GUIGetMsg()
+		Switch $nMsg
+			Case $GUI_EVENT_CLOSE
+				Global $aPos = WinGetPos($ProfileEditorGUI)
+				GUIDelete($ProfileEditorGUI)
+				_GUIMainMenu()
+
+			Case $Buttonback
+				Global $aPos = WinGetPos($ProfileEditorGUI)
+				GUIDelete($ProfileEditorGUI)
+				_GUIMainMenu()
+
+			Case $buttonRequestHelp
+				MsgBox(0, "Info", "Dieses Feature ist derzeit noch nicht verfügbar!")
+
+			Case $ButtonChangePassword
+				$finish = false
+				while $finish = False
+
+					$password1 = InputBox("Passwortänderung","Bitte geben Sie Ihr neues Passwort ein","","*")
+					Select
+						Case @Error = 0 ;OK - The string returned is valid
+							$run = true
+						Case @Error = 1 ;The Cancel button was pushed
+							$run = False
+							$finish = true
+					EndSelect
+
+					if $run = true Then
+						$password2 = InputBox("Passwortbestätigung", "Bitte bestätigen Sie Ihr Passwort", "", "*")
+						Select
+							Case @error = 0
+								if $password1 == $password2 Then
+									$port = _buildConnection()
+									$newPasswort = _encryptData($password2)
+									$ChangePassword = _UdpSend($ip,$port,"newpass|" & $Username & "|" & $newPasswort & "|1")
+									if $ChangePassword == "1" Then
+										GUICtrlSetData($labelNews,"Passwort wurde erfolgreich geändert!")
+										GUICtrlSetState($labelNews,$GUI_SHOW)
+										$finish = true
+									Else
+										MsgBox(16, "Fehler", "Es ist ein Fehler beim ändern des Passworts aufgetreten!" & @CRLF & "Bitte versuchen Sie es später erneut!")
+										$finish = true
+									EndIf
+								Else
+									$finish = False
+									MsgBox(16, "Fehler", "Die Passwörter stimmen nicht überein!")
+								endif
+
+							Case @error = 1
+								MsgBox(0, "Info", "Passwortänderung abgebrochen!")
+								$finish = true
+						EndSelect
+					Else
+						$run = True
+						MsgBox(0, "Info", "Passwortänderung abgebrochen!")
+					EndIf
+				WEnd
+		EndSwitch
+	WEnd
+
+
+EndFunc
+
+;==================================================================================================================
+
+
+; Function: _GUImyAccount()() ;=====================================================================================
+;
+; Name...........: _GUImyAccount()
+; Beschreibung ...: Persönliche Einstellungen
+; Syntax.........: _GUImyAccount()
+; Parameters ....: -
+; Return values .: -
+; Autor ........: SplashFlo
+;
+; ;================================================================================================================
+
+func _GUIadminSettings()
+	$GUIAdminSelection = GUICreate("AdminSelection", 219, 373, $aPos[0], $apos[1])
+	$buttonUserControl = GUICtrlCreateButton("Benutzerverwaltung", 32, 16, 147, 41)
+	$buttonReports = GUICtrlCreateButton("Bug/Feature Reports", 32, 72, 147, 41)
+	$buttonHelpRequests = GUICtrlCreateButton("Hilfeanfragen", 32, 128, 147, 41)
+	GUISetState(@SW_SHOW)
+
+	While 1
+		$nMsg = GUIGetMsg()
+		Switch $nMsg
+			Case $GUI_EVENT_CLOSE
+				Global $aPos = WinGetPos($GUIAdminSelection)
+				GUIDelete($GUIAdminSelection)
+				_GUIMainMenu()
+			Case $buttonReports
+				Global $aPos = WinGetPos($GUIAdminSelection)
+				GUIDelete($GUIAdminSelection)
+				_GUIShowReports()
+
+		EndSwitch
+	WEnd
+EndFunc
+
+
+func _GUIShowReports()
+
+	$port = _buildConnection()
+	$requestsRaw = _UdpSend($ip,$port,"getRequests|")
+	$request = StringSplit($requestsRaw,"|")
+	$GUIShowReports = GUICreate("Show Reports", 612, 566, $apos[0], $apos[1])
+	$List1 = GUICtrlCreateList("", 0, 0, 609, 422)
+	GUICtrlSetLimit(-1, 200)
+	$buttonShow = GUICtrlCreateButton("Anzeigen", 256, 432, 75, 25)
+	$buttonBack = GUICtrlCreateButton("Zurück", 8, 536, 75, 25)
+	$buttonCloseRequest = GUICtrlCreateButton("Delete Ticket", 256, 464, 75, 25)
+	for $i = 1 to $request[0]
+		_GUICtrlListBox_AddString($List1,$request[$i])
+	Next
+
+	GUISetState(@SW_SHOW)
+	While 1
+		$nMsg = GUIGetMsg()
+		Switch $nMsg
+			Case $GUI_EVENT_CLOSE
+				Global $aPos = WinGetPos($GUIShowReports)
+				GUIDelete($GUIShowReports)
+				_GUIMainMenu()
+
+			Case $buttonShow
+				$index = _GUICtrlListBox_GetCurSel($List1)
+				$text = _GUICtrlListBox_GetText($List1,$index)
+				$usernameString = StringInStr($text, "User:")
+				$usernameString = $usernameString + 5
+				$temp = StringTrimLeft($text, $usernameString)
+				$totalLenth = StringLen($temp)
+				$temp2 = StringInStr($temp, "ID:")
+				$temp2 = $temp2 - 6
+				$totalLenth = $totalLenth - $temp2
+				$usernameTest = StringTrimRight($temp,$totalLenth)
+
+				$temp = StringInStr($text, "ID:")
+				$temp = $temp + 2
+				$temp2 = StringTrimLeft($text,$temp)
+				$temp3 = StringInStr($temp2,"Message")
+				$temp3 = $temp3 - 6
+				$totalLenth = Stringlen($temp2)
+				$temp3 = $totalLenth - $temp3
+				$id = StringTrimRight($temp2,$temp3)
+				$port = _buildConnection()
+				$data = _UdpSend($ip,$port,"viewRequests|" & $usernameTest & $id)
+				if $data == "0" Then
+					MsgBox(16,"Error", "Error while getting request")
+				Else
+					Global $aPos = WinGetPos($GUIShowReports)
+					GUIDelete($GUIShowReports)
+					_viewRequest($data)
+				EndIf
+
+			Case $buttonCloseRequest
+
+				$index = _GUICtrlListBox_GetCurSel($List1)
+				$text = _GUICtrlListBox_GetText($List1,$index)
+				$usernameString = StringInStr($text, "User:")
+				$usernameString = $usernameString + 5
+				$temp = StringTrimLeft($text, $usernameString)
+				$totalLenth = StringLen($temp)
+				$temp2 = StringInStr($temp, "ID:")
+				$temp2 = $temp2 - 6
+				$totalLenth = $totalLenth - $temp2
+				$usernameTest = StringTrimRight($temp,$totalLenth)
+
+				$temp = StringInStr($text, "ID:")
+				$temp = $temp + 2
+				$temp2 = StringTrimLeft($text,$temp)
+				$temp3 = StringInStr($temp2,"Message")
+				$temp3 = $temp3 - 6
+				$totalLenth = Stringlen($temp2)
+				$temp3 = $totalLenth - $temp3
+				$id = StringTrimRight($temp2,$temp3)
+				$port = _buildConnection()
+				$data = _UdpSend($ip,$port,"deleteRequests|" & $usernameTest & $id)
+				if $data == "0" Then
+					MsgBox(16,"Error", "Error while deleting request")
+				Else
+					Global $aPos = WinGetPos($GUIShowReports)
+					GUIDelete($GUIShowReports)
+					_GUIShowReports()
+				EndIf
+
+			Case $Buttonback
+				Global $aPos = WinGetPos($GUIShowReports)
+				GUIDelete($GUIShowReports)
+				_GUIMainMenu()
+
+
+
+
+
+
+		EndSwitch
+	WEnd
+EndFunc
+
+func _viewRequest($data)
+
+	$newData = StringSplit($data,"|")
+
+	$GUIListRequest = GUICreate("List Request", 428, 394, $apos[0], $apos[1])
+	GUISetBkColor(0x99B4D1)
+	$labelRequest = GUICtrlCreateLabel($newData[2], 0, 64, 420, 252, BitOR($WS_VSCROLL,$WS_BORDER))
+	$labelKind = GUICtrlCreateLabel("Typ: " & $newData[1], 112, 16, 178, 24)
+	GUICtrlSetFont(-1, 12, 800, 0, "MS Sans Serif")
+	$buttonBack = GUICtrlCreateButton("Zurück", 24, 352, 75, 25)
+	$buttonDelete = GUICtrlCreateButton("Request löschen", 312, 352, 91, 25)
+	GUISetState(@SW_SHOW)
+
+	While 1
+		$nMsg = GUIGetMsg()
+		Switch $nMsg
+			Case $GUI_EVENT_CLOSE
+
+				Global $aPos = WinGetPos($GUIListRequest)
+				GUIDelete($GUIListRequest)
+				_GUIShowReports()
+
+			Case $buttonBack
+
+				Global $aPos = WinGetPos($GUIListRequest)
+				GUIDelete($GUIListRequest)
+				_GUIShowReports()
+
+		EndSwitch
+	WEnd
+
+
+EndFunc
+
+
+
+;==================================================================================================================

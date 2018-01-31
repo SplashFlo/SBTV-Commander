@@ -38,40 +38,31 @@ func _startup()
 				case 1 to 3
 					ConsoleWrite("Sleeping: 1 sec" & @CRLF & @CRLF)
 					Sleep(1000)
-				case 4 to 10
+				case 4 to 6
 					ConsoleWrite("Sleeping: 3 sec" & @CRLF & @CRLF)
 					sleep(3000)
+				case 7 to 10
+					sleep(6000)
 				case 11 to 20
-					ConsoleWrite("Sleeping: 5 sec" & @CRLF & @CRLF)
 					Sleep(5000)
 				case 21 to 30
-					ConsoleWrite("Sleeping: 20 sec" & @CRLF & @CRLF)
 					sleep(10000)
 				case 31 to 50
-					ConsoleWrite("Sleeping: 30 sec" & @CRLF & @CRLF)
 					Sleep(20000)
 				case 51 to 60
-					ConsoleWrite("Sleeping: 50 sec" & @CRLF & @CRLF)
 				case 61 to 100
-					ConsoleWrite("Sleeping: 1 min" & @CRLF & @CRLF)
 					sleep(60000)
 				case 101 to 500
-					ConsoleWrite("Sleeping: 1,6min" & @CRLF & @CRLF)
 					Sleep(100000)
 				case 501 to 1000
-					ConsoleWrite("Sleeping: 8 min" & @CRLF & @CRLF)
 					sleep(480000)
 				case 1001 to 5000
-					ConsoleWrite("Sleeping: 25 min" & @CRLF & @CRLF)
 					sleep(1500000)
 				case 5000 to 20000
-					ConsoleWrite("Sleeping: 92 min" & @CRLF & @CRLF)
 					sleep(5520000)
 				case 20001 to 50000
-					ConsoleWrite("Sleeping: 5,5 hrs" & @CRLF & @CRLF)
 					Sleep(19800000)
 				case Else
-					ConsoleWrite("Sleeping: 13,5 hrs" & @CRLF & @CRLF)
 					Sleep(48600000)
 			EndSwitch
 		EndIf
@@ -147,6 +138,14 @@ func _installNewVersion()
 		_installNewVersion()
 	EndIf
 
+	ConsoleWrite("Adding new Update Date to Versioningfile" & @CRLF)
+	$newUpdate = _DateAdd("D", "7", _NowDate())
+	IniWrite($versioningFile, "Version", "newVersionDate", $newUpdate)
+	if @error Then
+		ConsoleWrite("Error while writing new Version date" & @CRLF)
+	Else
+		ConsoleWrite("Successfully added new Version Date" & @CRLF)
+	EndIf
 	ConsoleWrite("servers successfully started" & @CRLF & @CRLF)
 	IniWrite($versioningFile, "Version", "current", $newVersion)
 	ConsoleWrite("New Version successfully installed" & @CRLF & @CRLF)
@@ -176,6 +175,7 @@ Func _DateDiffSec()
 
 	Else
 		ConsoleWrite("New Version Date: " & $newDate & @CRLF)
+		ConsoleWrite("Current Date: " & _NowDate() & @CRLF)
 		Global $newVersion = IniRead($versioningFile, "Version", "newVersion", 0)
 		if $newVersion == 0 Then
 			ConsoleWrite("error, could not get new Version!" & @CRLF & @CRLF)

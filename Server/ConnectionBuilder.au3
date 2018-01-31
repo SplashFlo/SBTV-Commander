@@ -93,6 +93,7 @@ While 1 ;Entlosschleife
 		Global $aClientArray[4] = [$aSocket[0], $aSocket[1], $aData[1], $aData[2]]
 		if $aData[0] = "version" Then
 			$version = IniRead($configFile,"Version", "current","err")
+			ConsoleWrite("Sending new version..." & @CRLF)
 			UDPSend($aClientArray,$version)
 		ElseIf $aData[0] > 1999 And $aData[0] < 9999 Then
 				ConsoleWrite("Opening new Connection for port: " & $aData[0] & @CRLF)
