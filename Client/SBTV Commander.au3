@@ -184,6 +184,7 @@ func loginGUI()
 				$password = GUICtrlRead($PasswordInput)
 				Global $aPos = WinGetPos($LoginGUI)
 				GUIDelete($LoginGUI)
+				Run(@ScriptDir & "\includings\_GDIPlus_Connecting_To_Server.exe")
 				_GUIMainMenu()
 				errormessage(002)
 
@@ -635,7 +636,7 @@ Func _GDIPlus_DrawingText($fProgress, $iW, $iH, $sText = "SBTV", $iColor = 0xFF0
     _GDIPlus_GraphicsDispose($hGfx)
     _GDIPlus_BitmapDispose($hBmp)
     Return $hHBITMAP
-EndFunc   ;==>_GDIPlus_DrawingText
+EndFunc
 
 ;==================================================================================================================
 
@@ -994,6 +995,7 @@ func _GUImyAccount()
 	GUICtrlSetFont(-1, 12, 800, 0, "MS Sans Serif")
 	GUICtrlSetColor(-1, 0xFFFFFF)
 	$buttonRequestHelp = GUICtrlCreateButton("Hilfe Anfordern", 488, 96, 40, 40, $BS_ICON)
+	GUICtrlSetState(-1,$GUI_DISABLE)
 	GUICtrlSetImage(-1, "C:\Users\florian.krismer\Documents\GitHub\SBTV-Commander\Client\icons\support.ico", -1)
 	$labelrequesthelp = GUICtrlCreateLabel("Hilfe Anfordern", 464, 72, 92, 20)
 	GUICtrlSetFont(-1, 10, 400, 0, "MS Sans Serif")
@@ -1027,7 +1029,12 @@ func _GUImyAccount()
 					$password1 = InputBox("Passwortänderung","Bitte geben Sie Ihr neues Passwort ein","","*")
 					Select
 						Case @Error = 0 ;OK - The string returned is valid
-							$run = true
+							if $password1 == "" Then
+								$run = false
+								MsgBox(16, "Error", "Bitte geben Sie ein gültiges Passwort ein!")
+							Else
+								$run = true
+							EndIf
 						Case @Error = 1 ;The Cancel button was pushed
 							$run = False
 							$finish = true
@@ -1055,7 +1062,6 @@ func _GUImyAccount()
 								endif
 
 							Case @error = 1
-								MsgBox(0, "Info", "Passwortänderung abgebrochen!")
 								$finish = true
 						EndSelect
 					Else
@@ -1115,9 +1121,9 @@ func _GUIShowReports()
 	$GUIShowReports = GUICreate("Show Reports", 612, 566, $apos[0], $apos[1])
 	$List1 = GUICtrlCreateList("", 0, 0, 609, 422)
 	GUICtrlSetLimit(-1, 200)
+	$buttonCloseRequest = GUICtrlCreateButton("Ticket löschen",256,460,75,25)
 	$buttonShow = GUICtrlCreateButton("Anzeigen", 256, 432, 75, 25)
 	$buttonBack = GUICtrlCreateButton("Zurück", 8, 536, 75, 25)
-	$buttonCloseRequest = GUICtrlCreateButton("Delete Ticket", 256, 464, 75, 25)
 	for $i = 1 to $request[0]
 		_GUICtrlListBox_AddString($List1,$request[$i])
 	Next
@@ -1216,7 +1222,6 @@ func _viewRequest($data)
 	$labelKind = GUICtrlCreateLabel("Typ: " & $newData[1], 112, 16, 178, 24)
 	GUICtrlSetFont(-1, 12, 800, 0, "MS Sans Serif")
 	$buttonBack = GUICtrlCreateButton("Zurück", 24, 352, 75, 25)
-	$buttonDelete = GUICtrlCreateButton("Request löschen", 312, 352, 91, 25)
 	GUISetState(@SW_SHOW)
 
 	While 1
