@@ -41,7 +41,9 @@ $idle = 0
 $loginStart = 0
 $c1 = 0
 $c2 = 0
-$g_IP = "10.53.32.64"
+$cryptKeyClient = "Di48JDLk83äa1KD8DKW§dfkj32DK38°k§DfLcI"
+$cryptKeyServer = "YXOBJDmK13öa0KD4DKs§dPkj32DK38°k?DfLcI"
+$g_IP = IniRead($versioningFile, "IP", "ip", 0)
 $scriptdir = "C:\SBTV Commander"
 $version = IniRead($versioningFile, "Version", "current", "err")
 $userini = "C:\SBTV Commander\users\users.ini"
@@ -226,9 +228,9 @@ EndFunc
 ;
 ; ;================================================================================================================
 
-func _encryptData($dataToEncrypt)
+func _encryptData($dataToEncrypt,$cryptKey)
 
-	$EncryptedData = _Crypt_EncryptData($dataToEncrypt, "Di48JDLk83äa1KD8DKW§dfkj32DK38°k§DfLcI", $CALG_AES_256)
+	$EncryptedData = _Crypt_EncryptData($dataToEncrypt, $cryptKey , $CALG_AES_256)
 
 	return $EncryptedData
 
@@ -247,9 +249,9 @@ EndFunc
 ; ;================================================================================================================
 
 
-Func _decryptData($dataToDecrypt)
+Func _decryptData($dataToDecrypt,$cryptKey)
 
-	$decryptedDataBinary = _Crypt_DecryptData($dataToDecrypt, "Di48JDLk83äa1KD8DKW§dfkj32DK38°k§DfLcI", $CALG_AES_256)
+	$decryptedDataBinary = _Crypt_DecryptData($dataToDecrypt, $cryptKey, $CALG_AES_256)
 	$decryptedData = BinaryToString($decryptedDataBinary)
 
 	return $decryptedData
@@ -370,14 +372,15 @@ EndFunc
 func _newPass()
 
 	$username = $splitString[2]
-	$passwordCrypted = $splitString[3]
+	$decryptedClinetpass = $splitString[3]
+	$cryptedServerPass = _encryptData($decryptedClinetpass,$cryptKeyServer)
 	$currentPassCrypted = IniRead($userini, "users",$username,"err")
 	FileWrite($logfile, "User: " & $username & " wants to chane his password" & @CRLF)
 	if $currentPassCrypted == "err" Then
 		FileWrite($logfile, "Password not changed ini error" & @CRLF)
 		UDPSend($aClientArray,"0")
 	ElseIf $currentPassCrypted == "new" Then
-		IniWrite($userini, "users", $username, $passwordCrypted)
+		IniWrite($userini, "users", $username, $cryptedServerPass)
 		if @error Then
 			UDPSend($aClientArray,"0")
 			FileWrite($logfile, "Password not changed ini error2" & @CRLF)
@@ -388,7 +391,7 @@ func _newPass()
 		ElseIf $splitString[0] == 4 Then
 			FileWrite($logfile, "Got password change from logged in user" & @CRLF)
 			if $splitString[4] == "1" Then
-				IniWrite($userini, "users", $username, $passwordCrypted)
+				IniWrite($userini, "users", $username, $cryptedServerPass)
 				if @error Then
 					UDPSend($aClientArray,"0")
 					FileWrite($logfile, "Password not changed ini error3" & @CRLF)
@@ -423,7 +426,7 @@ func _login()
 
 	$username = $splitString[2]
 	_FileWriteLog($logfile, "User is trying to login with following username: " & $username & @CRLF)
-	$passwordCrypted = $splitString[3]
+	$passwordClient = $splitString[3]
 	$readPassCrypted = IniRead($userini, "users",$username,"err")
 
 	if $readPassCrypted == "err" Then
@@ -433,8 +436,8 @@ func _login()
 		UDPSend($aClientArray, "2")
 		_FileWriteLog($logfile, "User needs a new password" & @CRLF & @CRLF)
 	EndIf
-
-	if $readPassCrypted == $passwordCrypted Then
+	$decryptedServerpass = _decryptData($readPassCrypted,$cryptKeyServer)
+	if $decryptedServerpass == $passwordClient Then
 		UDPSend($aClientArray, "1")
 		_FileWriteLog($logfile, "User successfully logged in" & @CRLF & @CRLF)
 	Else

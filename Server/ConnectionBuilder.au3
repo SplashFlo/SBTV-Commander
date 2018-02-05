@@ -64,6 +64,7 @@ $aSocket = UDPBind($g_IP, $serverPort) ; Öffnet einen Socket mit der IP $g_IP u
 ConsoleWrite("Starting UDP Server..." & @CRLF)
 ConsoleWrite("Current Version: " & $version & @CRLF)
 ConsoleWrite("Current Port : " & $serverPort & @CRLF)
+ConsoleWrite("Current IP:"  & $g_IP & @CRLF)
 
 ;------------------------------------------------------
 ;-----------------Abfrage des UDP----------------------

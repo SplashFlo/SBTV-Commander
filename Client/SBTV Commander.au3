@@ -48,7 +48,7 @@ OnAutoItExitRegister("_endScript")
 
 $version = 0.3 ;Aktuelle Versionsnumemr als double
 $clientPath = "C:\Program Files\SBTVPrograms\Commander" ;Pfad nach Installation von dem Programm
-Global $ip = "10.53.32.64"
+Global $ip = "10.53.32.38"
 Global $aPos[2]
 Global $nowsec = @SEC
 $apos[0] = -1
@@ -113,6 +113,8 @@ func errorMessage($errorNumber,$stopScript = False)
 		Case 002
 			MsgBox(16, "Error002", "Der Server konnte nicht erreicht werden!")
 
+		case 003
+			MsgBox(16, "Error003", "Beutzername oder Kennwort sind falsch!")
 		Case Else
 			MsgBox(16, "#UNKNOWN ERROR#", "#UNKNOWN ERROR#" & @CRLF &"Es ist ein schwerwiegender Fehler beim erstellen einer Fehlermeldung aufgetreten!")
 			Exit
@@ -141,7 +143,7 @@ EndFunc
 
 func loginGUI()
 
-	$LoginGUI = GUICreate("Login", 260, 153, $apos[0],$apos[1])
+	Global $LoginGUI = GUICreate("Login", 260, 153, $apos[0],$apos[1])
 	GUISetIcon(@ScriptDir & "\icons\sbtv.ico")
 	GUISetBkColor(0xC0C0C0)
 	$Group = GUICtrlCreateGroup("", 16, 16, 178, 81)
@@ -182,14 +184,90 @@ func loginGUI()
 			Case $LoginButton
 				Global $Username = GUICtrlRead($UsernameInput)
 				$password = GUICtrlRead($PasswordInput)
-				Global $aPos = WinGetPos($LoginGUI)
-				GUIDelete($LoginGUI)
 				Run(@ScriptDir & "\includings\_GDIPlus_Connecting_To_Server.exe")
-				_GUIMainMenu()
-				errormessage(002)
+				$login = _login($username,$password)
 
 		EndSwitch
 	WEnd
+
+EndFunc
+;==================================================================================================================
+
+
+; Function: Login ;=============================================================================================
+;
+; Name...........: login
+; Beschreibung ...: Der login selbst
+; Syntax.........: _login($username, $password)
+; Parameters ....: $username = Benutzername
+;				   $password = Passwort
+; Return values .: 0 = fehler
+;				   1 = OK
+; Autor ........: SplashFlo
+;
+; ;================================================================================================================
+
+func _login($username,$password)
+
+	$port = _buildConnection()
+	$sendLogin = _UdpSend($ip,$port,"login|" & $username & "|" & $password)
+
+	Switch $sendLogin
+		case "1"
+			Global $aPos = WinGetPos($LoginGUI)
+			GUIDelete($LoginGUI)
+			_GUIMainMenu()
+		case "0"
+			if WinExists("Steam Punk Loading") then
+				WinKill("Steam Punk Loading")
+			EndIf
+			errormessage(003)
+		case "2"
+			if WinExists("Steam Punk Loading") then
+				WinKill("Steam Punk Loading")
+			EndIf
+			$finish = false
+			while $finish = False
+
+				$password1 = InputBox("Passwortänderung","Bitte geben Sie Ihr neues Passwort ein","","*")
+				Select
+					Case @Error = 0 ;OK - The string returned is valid
+						if $password1 == "" Then
+							$run = false
+							MsgBox(16, "Error", "Bitte geben Sie ein gültiges Passwort ein!")
+						Else
+							$run = true
+						EndIf
+					Case @Error = 1 ;The Cancel button was pushed
+						$run = False
+						$finish = true
+				EndSelect
+
+				if $run = true Then
+					$password2 = InputBox("Passwortbestätigung", "Bitte bestätigen Sie Ihr Passwort", "", "*")
+					Select
+						Case @error = 0
+							if $password1 == $password2 Then
+								$port = _buildConnection()
+								$ChangePassword = _UdpSend($ip,$port,"newpass|" & $Username & "|" & $password2)
+								if $ChangePassword == "1" Then
+									Global $aPos = WinGetPos($LoginGUI)
+									GUIDelete($LoginGUI)
+									_GUIMainMenu()
+									$finish = true
+
+								Else
+									MsgBox(16, "Fehler", "Es ist ein Fehler beim ändern des Passworts aufgetreten!" & @CRLF & "Bitte versuchen Sie es später erneut!")
+									$finish = true
+								EndIf
+							Else
+								$finish = False
+								MsgBox(16, "Fehler", "Die Passwörter stimmen nicht überein!")
+							endif
+					EndSelect
+				EndIf
+			WEnd
+	EndSwitch
 
 EndFunc
 
@@ -1046,7 +1124,7 @@ func _GUImyAccount()
 							Case @error = 0
 								if $password1 == $password2 Then
 									$port = _buildConnection()
-									$newPasswort = _encryptData($password2)
+									$newPasswort = $password2
 									$ChangePassword = _UdpSend($ip,$port,"newpass|" & $Username & "|" & $newPasswort & "|1")
 									if $ChangePassword == "1" Then
 										GUICtrlSetData($labelNews,"Passwort wurde erfolgreich geändert!")
@@ -1066,7 +1144,6 @@ func _GUImyAccount()
 						EndSelect
 					Else
 						$run = True
-						MsgBox(0, "Info", "Passwortänderung abgebrochen!")
 					EndIf
 				WEnd
 		EndSwitch
