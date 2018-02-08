@@ -11,7 +11,9 @@
 
 
 #include <Date.au3>
+#include <Process.au3>
 #RequireAdmin
+
 ;------------------------------------------------------
 ;--------------------Variablen-------------------------
 ;------------------------------------------------------
@@ -36,10 +38,8 @@ func _startup()
 				case -9999999999999999 to 0
 					_deleteOldVersion()
 				case 1 to 3
-					ConsoleWrite("Sleeping: 1 sec" & @CRLF & @CRLF)
 					Sleep(1000)
 				case 4 to 6
-					ConsoleWrite("Sleeping: 3 sec" & @CRLF & @CRLF)
 					sleep(3000)
 				case 7 to 10
 					sleep(6000)
@@ -139,7 +139,7 @@ func _installNewVersion()
 	EndIf
 
 	ConsoleWrite("Adding new Update Date to Versioningfile" & @CRLF)
-	$newUpdate = _DateAdd("D", "7", _NowDate())
+	$newUpdate = _DateAdd("D", "7", _NowCalc())
 	IniWrite($versioningFile, "Version", "newVersionDate", $newUpdate)
 	if @error Then
 		ConsoleWrite("Error while writing new Version date" & @CRLF)
@@ -148,6 +148,8 @@ func _installNewVersion()
 	EndIf
 	ConsoleWrite("servers successfully started" & @CRLF & @CRLF)
 	IniWrite($versioningFile, "Version", "current", $newVersion)
+	sleep(3000)
+	_RunDos("cls")
 	ConsoleWrite("New Version successfully installed" & @CRLF & @CRLF)
 	_startup()
 EndFunc
@@ -168,14 +170,15 @@ EndFunc
 ; ==========================================================================================
 
 Func _DateDiffSec()
+	_RunDos("cls")
 	Global $newDate = IniRead($versioningFile, "Version", "newVersionDate", 0)
 	if $newDate == 0 Then
-		ConsoleWrite("error, could not get new Version Date!" & @CRLF & @CRLF)
+		ConsoleWrite("error, could not get new Version Date!" & @CRLF & @CRLF & @CRLF)
 		Return "error"
 
 	Else
 		ConsoleWrite("New Version Date: " & $newDate & @CRLF)
-		ConsoleWrite("Current Date: " & _NowDate() & @CRLF)
+		ConsoleWrite("Current Date: " & _NowCalc() & @CRLF)
 		Global $newVersion = IniRead($versioningFile, "Version", "newVersion", 0)
 		if $newVersion == 0 Then
 			ConsoleWrite("error, could not get new Version!" & @CRLF & @CRLF)
@@ -185,7 +188,8 @@ Func _DateDiffSec()
 			ConsoleWrite("New Version: " & $newVersion & @CRLF)
 			$oldVersion = IniRead($versioningFile, "Version", "current", $newVersion)
 			if $oldVersion == $newVersion then
-				ConsoleWrite("error, Newest version already installed. Checking again in 10 min" & @CRLF & @CRLF)
+
+				ConsoleWrite("Newest version already installed. Checking again in 10 min" & @CRLF & @CRLF & @CRLF)
 				sleep(600000)
 				_startup()
 			EndIf

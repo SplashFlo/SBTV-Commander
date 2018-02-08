@@ -6,10 +6,10 @@
 #pragma compile(UPX, False)
 #pragma compile(FileDescription, Ein Clanverwaltungsprogramm)
 #pragma compile(ProductName, SBTV Commander)
-#pragma compile(ProductVersion, 0.1)
-#pragma compile(FileVersion, 0.1) ; The last parameter is optional.
+#pragma compile(ProductVersion, 0.3.5)
+#pragma compile(FileVersion, 0.3.5)
 #pragma compile(LegalCopyright, © SplashBirdTV)
-;#pragma compile(LegalTrademarks, '"Trademark something1, and some text in "quotes" etc...')
+
 #pragma compile(CompanyName, 'SplashBirdTV')
 OnAutoItExitRegister("_endScript")
 
@@ -46,7 +46,7 @@ OnAutoItExitRegister("_endScript")
 ; Variablen
 ;=================================================================================================================
 
-$version = 0.3 ;Aktuelle Versionsnumemr als double
+$version = "0.3.5" ;Aktuelle Versionsnumemr als string
 $clientPath = "C:\Program Files\SBTVPrograms\Commander" ;Pfad nach Installation von dem Programm
 Global $ip = "10.53.32.38"
 Global $aPos[2]
@@ -78,6 +78,7 @@ func startup()
 		If Not FileExists("C:\Program Files\SBTVPrograms\Commander\icons") then $no = 1
 		If Not FileExists("C:\Program Files\SBTVPrograms\installer") then $no = 1
 		If Not FileExists("C:\Program Files\SBTVPrograms\installer\NewVersionInstaller.exe") then $no = 1
+
 
 		if $no == 1 Then
 			errormessage(001,true)
@@ -144,16 +145,17 @@ EndFunc
 func loginGUI()
 
 	Global $LoginGUI = GUICreate("Login", 260, 153, $apos[0],$apos[1])
+	GUISetFont(8, 400, 0, "Palatino Linotype")
 	GUISetIcon(@ScriptDir & "\icons\sbtv.ico")
 	GUISetBkColor(0xC0C0C0)
 	$Group = GUICtrlCreateGroup("", 16, 16, 178, 81)
 	$UsernameInput = GUICtrlCreateInput("Username", 33, 32, 151, 21)
-	GUICtrlSetFont(-1, 8, 800, 0, "MS Sans Serif")
+	GUICtrlSetFont(-1, 8, 800, 0, "Palatino Linotype")
 	GUICtrlSetColor(-1, 0xFFFFFF)
 	GUICtrlSetBkColor(-1, 0x000000)
 	GUICtrlSetCursor (-1, 5)
 	$PasswordInput = GUICtrlCreateInput("Passwort", 33, 64, 151, 21,$ES_PASSWORD)
-	GUICtrlSetFont(-1, 6, 800, 0, "MS Sans Serif")
+	GUICtrlSetFont(-1, 6, 800, 0, "Palatino Linotype")
 	GUICtrlSetColor(-1, 0xFFFFFF)
 	GUICtrlSetBkColor(-1, 0x000000)
 	GUICtrlSetCursor (-1, 5)
@@ -186,9 +188,27 @@ func loginGUI()
 				$password = GUICtrlRead($PasswordInput)
 				Run(@ScriptDir & "\includings\_GDIPlus_Connecting_To_Server.exe")
 				$login = _login($username,$password)
-
+			Case Else
+				If WinGetState("Login") == 15 Then
+					$checkpressed = _checkPressed()
+					if $checkpressed == true Then
+						Global $Username = GUICtrlRead($UsernameInput)
+						$password = GUICtrlRead($PasswordInput)
+						Run(@ScriptDir & "\includings\_GDIPlus_Connecting_To_Server.exe")
+						$login = _login($username,$password)
+					EndIf
+				EndIf
+				sleep(20)
 		EndSwitch
 	WEnd
+
+EndFunc
+
+func _checkPressed()
+
+	if _IsPressed("0D") Then
+		return true
+	EndIf
 
 EndFunc
 ;==================================================================================================================
@@ -415,6 +435,8 @@ func _GUIMainMenu()
 	_GDIPlus_Startup()
 	Global $iW = 615, $iH = 90
 	$mainMenu = GUICreate("MainMenu", 615, 437, $apos[0],$apos[1])
+	GUISetFont(12, 400, 0, "Palatino Linotype")
+	GUISetBkColor(0x000000)
 	Global $cPic = GUICtrlCreatePic("", 0, 0, $iW, $iH)
 	GUICtrlSetState(-1, $GUI_DISABLE)
 	$MenuCommander = GUICtrlCreateMenu("&SBTV Commander")
@@ -426,21 +448,21 @@ func _GUIMainMenu()
 	$MenuEnd = GUICtrlCreateMenuItem("Beenden", $MenuCommander)
 	$Help = GUICtrlCreateMenu("&Hilfe")
 	$MenuContact = GUICtrlCreateMenuItem("Kontakt", $Help)
-	GUISetFont(8, 400, 0, "Georgia")
-	GUISetBkColor(0xC61414)
 	$ButtonAccount = GUICtrlCreateButton("Accountverwaltung",35, 120, 40, 40, $BS_ICON)
 	GUICtrlSetImage(-1, @ScriptDir & "\icons\user.ico", -1)
 	GUICtrlSetTip(-1, "Accountverwaltung")
 	$ButtonBugReport = GUICtrlCreateButton("Bug Report / Feature Request",35, 180, 40, 40, $BS_ICON)
 	GUICtrlSetImage(-1, @ScriptDir & "\icons\bug.ico", -1)
 	GUICtrlSetTip(-1, "Bug Report / Feature Request")
-	$GroupUserbereich = GUICtrlCreateGroup("Userbereich", 8, 88, 97, 289)
-	GUICtrlCreateGroup("", -99, -99, 1, 1)
+	$GroupUserbereich = GUICtrlCreateGroup("", 8, 88, 97, 289)
+	GUICtrlSetFont(-1,12)
+	GUICtrlSetColor(-1,0xFFFFFF)
 	$labelCountdown = GUICtrlCreateLabel("Nächstes Update in: 00:00:00", 103, 376, 400, 22)
-	GUICtrlSetFont(-1, 12, 400, 0, "Georgia")
-	GUICtrlSetColor(-1, 0xC0C0C0)
-	$GroupUserbereich = GUICtrlCreateGroup("Adminbereich",500, 88, 97, 289)
-	GUICtrlCreateGroup("", -99, -99, 1, 1)
+	GUICtrlSetFont(-1,14)
+	GUICtrlSetColor(-1, 0xFFFFFF)
+	$GroupAdminbereich = GUICtrlCreateGroup("", 500, 88, 97, 289)
+	GUICtrlSetFont(-1, 12, 800, 0, "Palatino Linotype")
+	GUICtrlSetColor(-1, 0xFFFFFF)
 	$buttonAdminSettings = GUICtrlCreateButton("Admin Verwaltung", 527,120,40,40,$BS_ICON)
 	GUICtrlSetImage(-1,@ScriptDir & "\icons\adminSettings.ico",-1)
 	GUICtrlSetTip(-1, "Admin Einstellungen")
@@ -448,6 +470,7 @@ func _GUIMainMenu()
 	GUICtrlSetImage(-1, @ScriptDir & "\icons\teamspeak.ico",-1)
 	GUICtrlSetTip(-1,"Teamspeak Verwaltung")
 	$LabelRefreshing = GUICtrlCreateLabel("Refreshing Data...", 280, 405, 90, 17)
+	GUICtrlSetFont(-1,8)
 	GUICtrlSetColor(-1, 0xFFFFFF)
 	GUICtrlSetState(-1,$GUI_HIDE)
 	GUISetState(@SW_SHOW)
@@ -539,7 +562,9 @@ func _GUIMainMenu()
 			EndIf
 			GUICtrlSetData($labelCountdown,"Nächstes Update in: " & $dateDiffDays & " days " & $dateDiffHr & " hrs " & $dateDiffMin & " min " & $dateDiffSec & " sec")
 			if $dateDiffDays == 0 and $dateDiffHr == 0 and $dateDiffMin == 0 and $dateDiffSec == 0 Then
+				sleep(3000)
 				_checkVersion()
+
 			EndIf
 			$nowsec = @SEC
 		EndIf
@@ -733,8 +758,10 @@ EndFunc
 func _BugReportGui()
 
 	$BugReportGUI = GUICreate("Bug Report / Feature Request", 466, 197, $apos[0],$apos[1])
+	GUISetFont(12, 400, 0, "Palatino Linotype")
+	GUISetBkColor(0x000000)
 	$Label1 = GUICtrlCreateLabel("Was möchtest du melden?", 72, 24, 309, 33)
-	GUICtrlSetFont(-1, 18, 800, 0, "MS Sans Serif")
+	GUICtrlSetFont(-1, 18, 800, 0, "Palatino Linotype")
 	$ComboList = GUICtrlCreateCombo("Einen Bug Melden", 120, 80, 185, 25, BitOR($CBS_DROPDOWN,$CBS_AUTOHSCROLL))
 	$ButtonWeiter = GUICtrlCreateButton("Weiter", 216, 120, 75, 25)
 	$ButtonZur = GUICtrlCreateButton("Zurück", 128, 120, 75, 25)
@@ -776,25 +803,32 @@ EndFunc
 func _reportBugGUI()
 
 	$ReportBugGui = GUICreate("Report Bug", 464, 569, $apos[0],$apos[1])
+	GUISetFont(12, 400, 0, "Palatino Linotype")
+	GUISetBkColor(0x000000)
 	$ButtonSenden = GUICtrlCreateButton("&Senden", 249, 523, 75, 25)
 	$ButtonZur = GUICtrlCreateButton("&Zurück", 138, 523, 75, 25)
 	$labelArt = GUICtrlCreateLabel("Kurzbeschreibung", 120, 24, 215, 33)
-	GUICtrlSetFont(-1, 18, 800, 0, "MS Sans Serif")
-	$inputKurzbeschreibung = GUICtrlCreateInput("Das Hauptmenü öffnet sich nicht", 88, 112, 289, 21)
+	GUICtrlSetColor(-1,0xFFFFFF)
+	GUICtrlSetFont(-1, 18, 800, 0, "Palatino Linotype")
+	$inputKurzbeschreibung = GUICtrlCreateInput("Das Hauptmenü öffnet sich nicht", 88, 112, 289, 25)
 	GUICtrlSetLimit(-1, 32)
-	$labelBeschreibung = GUICtrlCreateLabel("Beschreibe kurz deinen Bug", 160, 80, 137, 17)
+	$labelBeschreibung = GUICtrlCreateLabel("Beschreibe kurz deinen Bug",130, 80, 190, 25)
+	GUICtrlSetColor(-1,0xFFFFFF)
 	$editBeschreibung = GUICtrlCreateEdit("", 8, 224, 441, 273)
 	GUICtrlSetLimit(-1, 500)
 	GUICtrlSetData(-1, "Wenn man auf login drückt öffnet sich das Hauptmenü nicht")
 	$Label1 = GUICtrlCreateLabel("Detailliert Beschreibung", 88, 160, 285, 33)
-	GUICtrlSetFont(-1, 18, 800, 0, "MS Sans Serif")
+	GUICtrlSetColor(-1,0xFFFFFF)
+	GUICtrlSetFont(-1, 18, 800, 0, "Palatino Linotype")
 	GUISetState(@SW_SHOW)
 
 	While 1
 		$nMsg = GUIGetMsg()
 		Switch $nMsg
 			Case $GUI_EVENT_CLOSE
-				_endScript()
+				Global $aPos = WinGetPos($ReportBugGui)
+				GUIDelete($ReportBugGui)
+				_BugReportGui()
 
 			Case $ButtonZur
 				Global $aPos = WinGetPos($ReportBugGui)
@@ -831,24 +865,31 @@ EndFunc
 func _featureRequestGui()
 
 	$FeatureRequestGui = GUICreate("Feature Request", 464, 569, $apos[0],$apos[1])
+	GUISetFont(12, 400, 0, "Palatino Linotype")
+	GUISetBkColor(0x000000)
 	$ButtonSenden = GUICtrlCreateButton("&Senden", 249, 523, 75, 25)
 	$ButtonZur = GUICtrlCreateButton("&Zurück", 138, 523, 75, 25)
 	$labelArt = GUICtrlCreateLabel("Kurzbeschreibung", 128, 24, 215, 33)
-	GUICtrlSetFont(-1, 18, 800, 0, "MS Sans Serif")
-	$inputKurzbeschreibung = GUICtrlCreateInput("", 88, 112, 289, 21)
+	GUICtrlSetColor(-1,0xFFFFFF)
+	GUICtrlSetFont(-1, 18, 800, 0, "Palatino Linotype")
+	$inputKurzbeschreibung = GUICtrlCreateInput("", 88, 112, 289, 25)
 	GUICtrlSetLimit(-1, 32)
-	$labelBeschreibung = GUICtrlCreateLabel("Beschreibe kurz was du vorschlagen würdest", 128, 80, 218, 17)
+	$labelBeschreibung = GUICtrlCreateLabel("Beschreibe kurz was du vorschlagen würdest", 80/, 80, 350, 25)
+	GUICtrlSetColor(-1,0xFFFFFF)
 	$editBeschreibung = GUICtrlCreateEdit("", 8, 224, 441, 273)
 	GUICtrlSetLimit(-1, 500)
 	$Label1 = GUICtrlCreateLabel("Detailliert Beschreibung", 88, 160, 285, 33)
-	GUICtrlSetFont(-1, 18, 800, 0, "MS Sans Serif")
+	GUICtrlSetColor(-1,0xFFFFFF)
+	GUICtrlSetFont(-1, 18, 800, 0, "Palatino Linotype")
 	GUISetState(@SW_SHOW)
 
 	While 1
 		$nMsg = GUIGetMsg()
 		Switch $nMsg
 			Case $GUI_EVENT_CLOSE
-				_endScript()
+				Global $aPos = WinGetPos($FeatureRequestGui)
+				GUIDelete($FeatureRequestGui)
+				_BugReportGui()
 
 			Case $ButtonZur
 				Global $aPos = WinGetPos($FeatureRequestGui)
@@ -1059,28 +1100,29 @@ EndFunc
 func _GUImyAccount()
 
 	$ProfileEditorGUI = GUICreate("Profileinstellungen für: " & $Username, 615, 437, $apos[0], $apos[1])
+	GUISetFont(12, 400, 0, "Palatino Linotype")
+	GUISetBkColor(0x000000)
 	$BGimage = GUICtrlCreatePic(@scriptdir & "\icons\guibackground.jpg",0,0,615,437,$WS_CLIPSIBLINGS)
 	$GroupMyAccount = GUICtrlCreateGroup("Mein Account", 8, 40, 145, 113)
-	GUICtrlSetFont(-1, 12, 800, 0, "MS Sans Serif")
 	GUICtrlSetColor(-1, 0xFFFFFF)
 	$ButtonChangePassword = GUICtrlCreateButton("Change Password", 56, 96, 40, 40, $BS_ICON)
 	GUICtrlSetImage(-1, "C:\Users\florian.krismer\Documents\GitHub\SBTV-Commander\Client\icons\changePassword.ico", -1)
-	$labelchangepass = GUICtrlCreateLabel("Passwort ändern", 24, 72, 104, 20)
-	GUICtrlSetFont(-1, 10, 400, 0, "MS Sans Serif")
+	$labelchangepass = GUICtrlCreateLabel("Passwort ändern", 15, 40, 130, 20)
+	GUICtrlSetColor(-1,0xFFFFFF)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 	GUICtrlSetTip(-1, "Passwort ändern")
 	$Group1 = GUICtrlCreateGroup("Hilfe und Support", 424, 40, 177, 113)
-	GUICtrlSetFont(-1, 12, 800, 0, "MS Sans Serif")
 	GUICtrlSetColor(-1, 0xFFFFFF)
-	$buttonRequestHelp = GUICtrlCreateButton("Hilfe Anfordern", 488, 96, 40, 40, $BS_ICON)
+	$buttonRequestHelp = GUICtrlCreateButton("", 488, 96, 40, 40, $BS_ICON)
 	GUICtrlSetState(-1,$GUI_DISABLE)
 	GUICtrlSetImage(-1, "C:\Users\florian.krismer\Documents\GitHub\SBTV-Commander\Client\icons\support.ico", -1)
-	$labelrequesthelp = GUICtrlCreateLabel("Hilfe Anfordern", 464, 72, 92, 20)
-	GUICtrlSetFont(-1, 10, 400, 0, "MS Sans Serif")
+	$labelrequesthelp = GUICtrlCreateLabel("Hilfe Anfordern", 464, 40, 130, 20)
+	GUICtrlSetColor(-1,0xFFFFFF)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 	GUICtrlSetTip(-1, "Passwort ändern")
 	$Buttonback = GUICtrlCreateButton("Zurück", 8, 8, 75, 25)
-	$labelNews = GUICtrlCreateLabel("News", 152, 16, 271, 17)
+	$labelNews = GUICtrlCreateLabel("News", 152, 16, 271, 25)
+	GUICtrlSetColor(-1, 0xFF0000)
 	GUICtrlSetState(-1,$GUI_HIDE)
 	GUISetState(@SW_SHOW)
 
@@ -1101,6 +1143,7 @@ func _GUImyAccount()
 				MsgBox(0, "Info", "Dieses Feature ist derzeit noch nicht verfügbar!")
 
 			Case $ButtonChangePassword
+				GUICtrlSetState($labelNews,$GUI_HIDE)
 				$finish = false
 				while $finish = False
 
@@ -1168,6 +1211,8 @@ EndFunc
 
 func _GUIadminSettings()
 	$GUIAdminSelection = GUICreate("AdminSelection", 219, 373, $aPos[0], $apos[1])
+	GUISetFont(12, 400, 0, "Palatino Linotype")
+	GUISetBkColor(0x000000)
 	$buttonUserControl = GUICtrlCreateButton("Benutzerverwaltung", 32, 16, 147, 41)
 	$buttonReports = GUICtrlCreateButton("Bug/Feature Reports", 32, 72, 147, 41)
 	$buttonHelpRequests = GUICtrlCreateButton("Hilfeanfragen", 32, 128, 147, 41)
@@ -1196,9 +1241,14 @@ func _GUIShowReports()
 	$requestsRaw = _UdpSend($ip,$port,"getRequests|")
 	$request = StringSplit($requestsRaw,"|")
 	$GUIShowReports = GUICreate("Show Reports", 612, 566, $apos[0], $apos[1])
+	GUISetFont(12, 400, 0, "Palatino Linotype")
+	GUISetBkColor(0x000000)
 	$List1 = GUICtrlCreateList("", 0, 0, 609, 422)
+	GUICtrlSetBkColor(-1,0x000000)
+	GUICtrlSetColor(-1,0xFFFFFF)
 	GUICtrlSetLimit(-1, 200)
 	$buttonCloseRequest = GUICtrlCreateButton("Ticket löschen",256,460,75,25)
+	GUICtrlSetFont(-1,8)
 	$buttonShow = GUICtrlCreateButton("Anzeigen", 256, 432, 75, 25)
 	$buttonBack = GUICtrlCreateButton("Zurück", 8, 536, 75, 25)
 	for $i = 1 to $request[0]
@@ -1294,10 +1344,14 @@ func _viewRequest($data)
 	$newData = StringSplit($data,"|")
 
 	$GUIListRequest = GUICreate("List Request", 428, 394, $apos[0], $apos[1])
-	GUISetBkColor(0x99B4D1)
+	GUISetFont(12, 400, 0, "Palatino Linotype")
+	GUISetBkColor(0x000000)
 	$labelRequest = GUICtrlCreateLabel($newData[2], 0, 64, 420, 252, BitOR($WS_VSCROLL,$WS_BORDER))
+	GUICtrlSetColor(-1,0xFFFFFF)
 	$labelKind = GUICtrlCreateLabel("Typ: " & $newData[1], 112, 16, 178, 24)
-	GUICtrlSetFont(-1, 12, 800, 0, "MS Sans Serif")
+	GUICtrlSetBkColor(-1,0x000000)
+	GUICtrlSetColor(-1,0xFFFFFF)
+	GUICtrlSetFont(-1, 12, 800, 0, "Palatino Linotype")
 	$buttonBack = GUICtrlCreateButton("Zurück", 24, 352, 75, 25)
 	GUISetState(@SW_SHOW)
 
