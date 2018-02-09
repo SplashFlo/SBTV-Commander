@@ -99,13 +99,15 @@ EndFunc
 ; Name...........: errorMessage
 ; Beschreibung ...: Überprüft ob alle Daten vorhanden sind
 ; Syntax.........: errormessage($errorNumber,[optional]$stopScript)
-; Parameters ....: $errorNumber = Die Errornummer, $stopScript = true, false (default false)
+; Parameters ....: $errorNumber = Die Errornummer
+;				   $stopScript = true, false (default false)
+;				   $custommessage = Falls man 999 wählt bei der Numemr kann man eine custom message schreiben
 ; Return values .: -
 ; Autor ........: SplashFlo
 ;
 ; ;================================================================================================================
 
-func errorMessage($errorNumber,$stopScript = False)
+func errorMessage($errorNumber,$stopScript = False,$customMessage = "")
 
 	Switch $errorNumber
 		Case 001
@@ -116,6 +118,12 @@ func errorMessage($errorNumber,$stopScript = False)
 
 		case 003
 			MsgBox(16, "Error003", "Beutzername oder Kennwort sind falsch!")
+		Case 999
+			If $custommessage <> "" Then
+				MsgBox(16, "Error999", $custommessage)
+			Else
+				ContinueCase
+			EndIf
 		Case Else
 			MsgBox(16, "#UNKNOWN ERROR#", "#UNKNOWN ERROR#" & @CRLF &"Es ist ein schwerwiegender Fehler beim erstellen einer Fehlermeldung aufgetreten!")
 			Exit
@@ -492,6 +500,9 @@ func _GUIMainMenu()
 			Case $MenuVersion
 				MsgBox(0, "Info", "Aktuelle Versionsnummer: " & $version)
 
+			Case $MenuContact
+				ShellExecute("mailto:splashflo@splashbirdtv.com")
+				MsgBox(0, "Info", "Kontakt Email: splashflo@splashbirdtv.com")
 			Case $MenuEnd
 				GUIRegisterMsg($WM_TIMER, "")
 				_WinAPI_DeleteObject($hHBmp_BG)
